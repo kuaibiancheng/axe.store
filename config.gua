@@ -1,0 +1,62 @@
+os.importPaths.add('/usr/local/axe/')
+const importConfig = import("axe_store_config")
+
+
+const formattedConfig = function(config) {
+    var mirror = config['mirror']
+    var urls = mirror['urls']
+    var new_urls = []
+    var i = 0
+    var l = urls.length()
+    while (i < l) {
+        var url = urls[i]
+        if (url.endswith('/')) {
+            url = url.cut(0, url.length() - 1)
+            config['mirror']['urls'][i] = url
+        }
+        i += 1
+    }
+    return config
+}
+
+
+const Config = class() {
+    // 定义一个 方法 (类里面的函数叫 方法, 单纯只是名字不同)
+    // 注意这里定义函数的方式是很特殊的, 和平时定义函数不一样
+    // new 是一个特殊的函数名字, 它会在实例化类的时候被调用(见下面的使用方法和说明)
+    const new = function(config) {
+        // 用 this.变量名 来创造一个只有类的实例才能访问的变量
+        // 定义实例变量的时候必须用 var 或 const 来修饰
+        const _c = formattedConfig(config)
+        const this.config = _c
+    }
+
+    const mirrorUrl = function() {
+        const config = this.config
+        const mirror = config['mirror']
+        const urls = mirror['urls']
+        const index = mirror['active_mirror_url_index']
+        const url = urls[index]
+        return url
+    }
+
+    const switchedMirrorUrl = function(originalUrl) {
+        const config = this.config
+        const mirror = config['mirror']
+        const urls = mirror['urls']
+        const l = urls.length()
+        var i = 0
+        while (i < l) {
+            const mirrorUrl = urls[i]
+            if (originalUrl.has(mirrorUrl)) {
+                const nextIndex = (i + 1) % l
+                const nextUrl = urls[nextIndex]
+                const newUrl = originalUrl.replace(mirrorUrl, nextUrl)
+                return newUrl
+            }
+            i += 1
+        }
+    }
+}
+
+const config = Config.new(importConfig.axeConfig)

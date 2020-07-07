@@ -1,0 +1,220 @@
+const util = import("util")
+
+const ensure = util.ensure
+
+const testGuaStringFindReverse = function() {
+    var i = '012 456 89'
+    var a = util.guaStringFindReverse(i, ' ')
+    var e = 7
+    ensure(a == e, a)
+
+    i = '012'
+    a = util.guaStringFindReverse(i, ' ')
+    e = -1
+    ensure(a == e, a)
+}
+
+const testGuaFilesInDirectory = function() {
+    var i = 'ls'
+    var a = util.guaFilesInDirectory('/tmp', needDirectory=true)
+    log(a)
+}
+
+const testGuaStringStrip = function() {
+    var i = 'aaa'
+    var a = util.guaStringStrip(i)
+    var e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'aaa '
+    a = util.guaStringStrip(i)
+    e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = ' aaa '
+    a = util.guaStringStrip(i)
+    e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = ' aaa  '
+    a = util.guaStringStrip(i)
+    e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = '  aaa  '
+    a = util.guaStringStrip(i)
+    e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = '  a a a  '
+    a = util.guaStringStrip(i)
+    e = 'a a a'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = '    '
+    a = util.guaStringStrip(i)
+    e = ''
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaStringEndwith = function() {
+    var i = 'abcef'
+    var i2 = 'ef'
+    var a = util.guaStringEndwith(i, i2)
+    var e = true
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'abcef'
+    i2 = 'f'
+    a = util.guaStringEndwith(i, i2)
+    e = true
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'abcef'
+    i2 = 'eef'
+    a = util.guaStringEndwith(i, i2)
+    e = false
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaStringStartwith = function() {
+    var i = 'abcef'
+    var i2 = 'ab'
+    var a = util.guaStringStartwith(i, i2)
+    var e = true
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'abcef'
+    i2 = 'a'
+    a = util.guaStringStartwith(i, i2)
+    e = true
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'abcef'
+    i2 = 'ba'
+    a = util.guaStringStartwith(i, i2)
+    e = false
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaStringLower = function() {
+    var i = 'aBc'
+    var a = util.guaStringLower(i)
+    var e = 'abc'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = 'AaBc A Z'
+    a = util.guaStringLower(i)
+    e = 'aabc a z'
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaFileMkdir = function() {
+    var path = '/tmp/mkdir/test'
+    util.guaFileMkdir(path)
+}
+
+const testGuaFileSha256 = function() {
+    var path = '/tmp/cai.cdr'
+    log(util.guaFileSha256(path))
+}
+
+const testGuaFileDirectoriesByName = function() {
+    const p = '/usr/local/axe/bottle/lib/python@3.8'
+    const l = 'lib'
+    log(util.guaFileDirectoriesByName(p, l))
+}
+
+const testGuaStringJoin = function() {
+    var i = ''
+    var list = []
+    var a = util.guaStringJoin(i, list)
+    var e = ''
+    ensure(a == e, '<{}>'.format(a))
+
+    i = ''
+    list = ['a']
+    a = util.guaStringJoin(i, list)
+    e = 'a'
+    ensure(a == e, '<{}>'.format(a))
+
+    i = ' '
+    list = ['a', 'b', 'c']
+    a = util.guaStringJoin(i, list)
+    e = 'a b c'
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaFileAllExeInDirectory = function() {
+    var path = '/usr/local/axe/bottle/lib/libunistring/0.9.10'
+    var a = util.guaFileAllExeInDirectory(path).length()
+    var e = [].length()
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaStringMultiply = function() {
+    var s = 'a'
+    var n = 3
+    var a = util.guaStringMultiply(s, n)
+    var e = 'aaa'
+    ensure(a == e, '<{}>'.format(a))
+
+    s = ''
+    n = 3
+    a = util.guaStringMultiply(s, n)
+    e = ''
+    ensure(a == e, '<{}>'.format(a))
+
+    s = 'ab'
+    n = 3
+    a = util.guaStringMultiply(s, n)
+    e = 'ababab'
+    ensure(a == e, '<{}>'.format(a))
+
+    s = '123'
+    n = 0
+    a = util.guaStringMultiply(s, n)
+    e = ''
+    ensure(a == e, '<{}>'.format(a))
+}
+
+const testGuaListSortByKey = function() {
+    var list = []
+    var key = 'key'
+    var a = util.guaListSortByKey(list, key)
+    log(a)
+
+    list = [{'key': 2}, ]
+    a = util.guaListSortByKey(list, key)
+    log(a)
+
+    list = [{'key': 2}, {'key': 3}]
+    a = util.guaListSortByKey(list, key)
+    log(a)
+
+    list = [{'key': 2}, {'key': 3}, {'key': 1}, {'key': -1}]
+    a = util.guaListSortByKey(list, key)
+    log(a)
+
+    list = [{'key': 2}, {'key': 3}, {'key': 1}, {'key': -1}]
+    a = util.guaListSortByKey(list, key, reverse=true)
+    log(a)
+}
+
+const tests = function() {
+    // testGuaFileMkdir()
+    // testGuaFileSha256()
+    // testGuaFileDirectoriesByName()
+    // testGuaFilesInDirectory()
+    // testGuaFileAllExeInDirectory()
+    testGuaStringFindReverse()
+    testGuaStringStrip()
+    testGuaStringEndwith()
+    testGuaStringStartwith()
+    testGuaStringLower()
+    testGuaStringJoin()
+    testGuaStringMultiply()
+    // testGuaListSortByKey()
+}
+
+tests()

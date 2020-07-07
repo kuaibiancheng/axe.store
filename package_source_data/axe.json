@@ -1,0 +1,7 @@
+[
+    {
+        "name": "axe-keymap",
+        "version": "latest",
+        "command": "sh -c \"$(curl -fsSL 'https://gitee.com/accelad/keymap/raw/master/install.sh')\""
+    }
+]

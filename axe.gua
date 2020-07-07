@@ -1,0 +1,66 @@
+const importPath = import('path')
+const importUtil = import('util')
+
+const axeSoftFromFile = function() {
+    var pathDir = importPath.pathMetaBin()
+    var pathJson = '{}/package_source_data/{}'.format(pathDir, 'axe.json')
+    var s = stringFromFile(pathJson)
+    var j = json.loads(s)
+    return j
+}
+
+const search = function(name) {
+    const axe = axeSoftFromFile()
+    const searchNames = []
+    for (var i = 0; i < axe.length(); i += 1) {
+        const item = axe[i]
+        const itemName = item['name']
+        const score = importUtil.guaStringMatchScore(name, itemName)
+        if (score <= 0) {
+            continue
+        } else {
+            const version = item['version']
+            const _item = {
+                'name': itemName,
+                'version': version,
+                'token': itemName,
+                'score': score,
+            }
+            searchNames.add(_item)
+        }
+    }
+
+    const sortedNames = importUtil.guaListSortByKey(searchNames, 'score', reverse=true)
+    return sortedNames
+}
+
+const axeSoftFromName = function(name) {
+    const axe = axeSoftFromFile()
+    var i = 0
+    const l = axe.length()
+    while (i < l) {
+        const item = axe[i]
+        const itemName = item['name']
+        if (itemName.lower() == name.lower()) {
+            return item
+        }
+        i += 1
+    }
+}
+
+const tokenExist = function(token) {
+    const b = axeSoftFromName(token)
+    const e = b != null
+    return e
+}
+
+const install = function(command) {
+    return importUtil.callWithoutOutput(command)
+}
+
+const get = function(name) {
+    const axe = axeSoftFromName(name)
+    const command = axe['command']
+    return install(command)
+}
+

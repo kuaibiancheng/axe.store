@@ -1,0 +1,13 @@
+const axeConfig = {
+    "mirror": {
+        // 默认为腾讯源
+        'active_mirror_url_index': 0,
+        "urls": [
+            "https://mirrors.cloud.tencent.com/homebrew-bottles/bottles/",
+            "https://mirrors.aliyun.com/homebrew/homebrew-bottles/bottles",
+            "https://mirrors.ustc.edu.cn/homebrew-bottles/bottles",
+            "https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/bottles/",
+            "https://homebrew.bintray.com/bottles",
+        ],
+    },
+}

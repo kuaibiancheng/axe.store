@@ -1,0 +1,60 @@
+const importCask = import("cask")
+const importUtil = importUtil('util')
+
+const ensure = importUtil.ensure
+
+const testRedirectedUrl = function() {
+    var i = 'https://d1.music.126.net/dmusic/obj/w5zCg8OCw6fCn2vDicOl/680685466/242a/20191112165731/NeteaseMusic_2.3.2_832_web.dmg'
+    var a = importCask.redirectedUrl(i)
+    var e = 'https://d1.music.126.net/dmusic/obj/w5zCg8OCw6fCn2vDicOl/680685466/242a/20191112165731/NeteaseMusic_2.3.2_832_web.dmg'
+    ensure(a == e, a)
+}
+
+const testSuffixOfFile = function() {
+    var i = '/abc/efg/aaa.exe'
+    var a = importCask.suffixOfFile(i)
+    var e = '.exe'
+    ensure(a == e, a)
+
+    i = '/abc/efg/aaa.txt?abc=123'
+    a = importCask.suffixOfFile(i)
+    e = '.txt'
+    ensure(a == e, a)
+}
+
+const testDmg = function() {
+    importCask.installDmg('qqmusic', 'https://dldir1.qq.com/music/clntupate/mac/QQMusicMac_Mgr.dmg')
+}
+
+const testDmgPkg = function() {
+    importCask.installDmg('teamviewer', 'https://download.teamviewer.com/download/TeamViewer.dmg')
+}
+
+const testZip = function() {
+    importCask.installZip('1clipboard', 'http://1clipboard.io/download/darwin/0.1.8/1Clipboard.zip')
+}
+
+const testPkg = function() {
+    importCask.installPkg('qtspim', 'https://downloads.sourceforge.net/spimsimulator/QtSpim_9.1.21_mac.pkg')
+}
+
+const testTar = function() {
+    var tarBz2 = 'https://downloads.sourceforge.net/freecol/freecol-0.11.6-mac.tar.bz2'
+    importCask.installTar('freecol', tarBz2)
+
+    var tarGz = 'https://downloads.sourceforge.net/camprocessor/CAMEd-3.2.2-macosx-cocoa-x86_64.tar.gz'
+    importCask.installTar('camed', tarGz)
+}
+
+const tests = function() {
+    importCask.prepare()
+    // testRedirectedUrl()
+    // testSuffixOfFile()
+    // testDmg()
+    // testDmgPkg()
+    // testZip()
+    // testPkg()
+    testTar()
+}
+
+tests()

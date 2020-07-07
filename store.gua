@@ -1,0 +1,351 @@
+#!/usr/local/axe/meta/gualang
+
+const importAxe = import("axe")
+const importCask = import("cask")
+const importBottle = import("bottle")
+const importUtil = import("util")
+const importPath = import("path")
+const importUpdate = import("update")
+
+// 先默认 axe 为 cask
+// const emojiAxe = '🍓'
+const emojiAxe = '🍏'
+const emojiBottle = '🍉'
+const emojiCask = '🍏'
+
+const emojiMelon = '🍉'
+
+const colorfulOk = function(word) {
+    const okGreen = '\033[92m'
+    const endc = '\033[0m'
+    const f = '{}{}{}'.format(okGreen, word, endc)
+    return f
+}
+
+const colorfulError = function(word) {
+    const errorRed = '\033[91m'
+    const endc = '\033[0m'
+    const f = '{}{}{}'.format(errorRed, word, endc)
+    return f
+}
+
+const beautifierBottleGet = function(token) {
+    const r = importBottle.get(token)
+    if (not r) {
+        log(colorfulError('install aborted'))
+    } else {
+        importUtil.callWithoutOutput("exec $SHELL")
+        const num = 3
+        const emoji = importUtil.guaStringMultiply(emojiBottle, num)
+        log('{} [cli] {} install successfully'.format(emoji, colorfulOk(token)))
+        log('{} store.axe bin path: {} '.format(emoji, colorfulOk(importPath.pathBottleBin())))
+        log('{} store.axe lib path: {} '.format(emoji, colorfulOk(importPath.pathLib())))
+    }
+}
+
+const beautifierCaskGet = function(token) {
+    const r = importCask.get(token)
+    if (not r) {
+        beautifierCaskGetFailed(token)
+    } else {
+        const num = 3
+        const emoji = importUtil.guaStringMultiply(emojiCask, num)
+        log('{} [app] {} install successfully'.format(emoji, colorfulOk(token)))
+    }
+}
+
+const beautifierCaskGetFailed = function(token) {
+    const num = 3
+    const emoji = importUtil.guaStringMultiply("!", num)
+    log('{} [app] {} install failed.check your network, or maybe this software can not download in China.'.format(emoji, colorfulError(token)))
+}
+
+const beautifierSearchOutput = function(items) {
+    const hintAxe = ' [axe] '
+    const hintBottle = ' [cli] '
+    const hintCask = ' [app] '
+    const showConfigMap = {
+        // 'axe': [emojiAxe, hintAxe],
+        // 先默认 axe 为 cask
+        'axe': [emojiCask, hintCask],
+        'bottle': [emojiBottle, hintBottle],
+        'cask': [emojiCask, hintCask],
+    }
+    var emoji = emojiBottle
+    var outputs = []
+    for (var i = 0; i < items.length(); i += 1) {
+        const item = items[i]
+        const token = item['token']
+        const num = i + 1
+        const name = item['name']
+        const version = item['version']
+
+        const type = item['type']
+        const showConfig = showConfigMap[type]
+        const emoji = showConfig[0]
+        const hint = showConfig[1]
+        const template = emoji + hint + '[{}] {}  {}@{}'
+        const s = template.format(colorfulOk(num), token, name, version)
+        outputs.add(s)
+    }
+    const ss = outputs.join('\n')
+    log(ss)
+}
+
+const newVersionHint = function() {
+    const version = async_result_check_version()
+    if (version != null) {
+        const hintVersion = 'new version of store found, please update(store.axe update)'
+        const colorfulVersion = colorfulOk(hintVersion)
+        log('')
+        log(colorfulVersion)
+    }
+}
+
+const selectNumFromInput = function(maxNum) {
+    const hintMsg = 'type number to install, Enter to exit:'
+    log(hintMsg)
+    var strNum = input()
+    strNum = strNum.strip(' ')
+    if (strNum == '') {
+        return -1
+    }
+
+    const num = importUtil.guaStringToInt(strNum)
+    const errMsg = colorfulError("please select correct number")
+    if (num == null) {
+        log(errMsg)
+        return null
+    } else if (num > 0 and num <= maxNum) {
+        return num
+    } else {
+        log(errMsg)
+        return null
+    }
+}
+
+const promptSearch = function(funcSearch, token) {
+    const out = funcSearch(token)
+    const funcMap = {
+        'axe': beautifierAxeGet,
+        'bottle': beautifierBottleGet,
+        'cask': beautifierCaskGet,
+    }
+
+    const maxNum = out.length()
+    if (maxNum == 0) {
+        const error = colorfulError("can not find any items.")
+        log(error)
+        return
+    }
+
+    log("find items:")
+    beautifierSearchOutput(out)
+    newVersionHint()
+    while (true) {
+        const selected = selectNumFromInput(maxNum)
+        if (selected == -1) {
+            break
+        } else if (selected == null) {
+            continue
+        } else {
+            const item = out[selected - 1]
+            const type = item['type']
+            const token = item['token']
+            const func = funcMap[type]
+            return func(token)
+        }
+    }
+}
+
+const comboSearch = function(name) {
+    const a = importAxe.search(name)
+    const b = importBottle.search(name)
+    const c = importCask.search(name)
+    var l = [
+        [b, 'bottle'],
+
+        // 先默认 axe 为 cask
+        [a, 'axe'],
+        [c, 'cask'],
+    ]
+    var combo = []
+    for (var i = 0; i < l.length(); i += 1) {
+        const tuple = l[i]
+        const result = tuple[0]
+        const type = tuple[1]
+        for (var j = 0; j < result.length(); j += 1) {
+            var item = result[j]
+            item['type'] = type
+            combo.add(item)
+        }
+    }
+    return combo
+}
+
+const beautifierAxeGet = function(token) {
+    const r = importAxe.get(token)
+    if (not r) {
+        log(colorfulError('install failed'))
+    } else {
+        const num = 3
+        const emoji = importUtil.guaStringMultiply(emojiAxe, num)
+        log('{} [axe] {} install successfully'.format(emoji, colorfulOk(token)))
+    }
+}
+
+const promptGet = function(token) {
+    const ae = importAxe.tokenExist(token)
+    const be = importBottle.tokenExist(token)
+    const ce = importCask.tokenExist(token)
+
+    const result = {
+        'axe': [ae, beautifierAxeGet],
+        'bottle': [be, beautifierBottleGet],
+        'cask': [ce, beautifierCaskGet],
+    }
+
+    var foundNum = 0
+    var foundType = null
+    const keys = result.keys()
+    for (var i = 0; i < keys.length(); i += 1) {
+        const key = keys[i]
+        const v = result[key]
+        const found = v[0]
+        if (found) {
+            foundNum += 1
+            foundType = key
+        }
+    }
+    if (foundNum == 0) {
+        log(colorfulError('token not exist'))
+    } else if (foundNum == 1) {
+        const software = result[foundType]
+        const func = software[1]
+        func(token)
+    } else {
+        promptSearch(comboSearch, token)
+    }
+}
+
+// todo axelib
+
+const promptHelp = function() {
+    log('{} usage: {}'.format(emojiMelon, colorfulOk('store.axe get/sou qq')))
+    log('{} update store: {}'.format(emojiMelon, colorfulOk('store.axe update')))
+    log('{} remove app: {}'.format(emojiMelon, colorfulOk('store.axe rm qqmusic')))
+    // log('{} create axelib: {}'.format(emojiMelon, colorfulOk("store axe sdl2")))
+    log('{} store.axe bin path: {}'.format(emojiMelon, colorfulOk(importPath.pathBottleBin())))
+    log('{} store.axe lib path: {}'.format(emojiMelon, colorfulOk(importPath.pathLib())))
+    log('{} store.axe opt path: {}'.format(emojiMelon, colorfulOk(importPath.pathOpt())))
+    // log('{} store.axe axelib path: {}'.format(emojiMelon, colorfulOk(importPath.pathAxelib())))
+    log('{} store.axe config path: {}'.format(emojiMelon, colorfulOk(importPath.pathConfigFile())))
+}
+
+const promptUpdate = function(result) {
+    const num = 3
+    const emoji = importUtil.guaStringMultiply(emojiMelon, num)
+    log('{} your store is up-to-date'.format(emoji))
+}
+
+const promptRm = function(token) {
+    const e = importCask.tokenExist(token)
+    if (e) {
+        const r = importCask.remove(token)
+        if (r) {
+            const hint = 'rm {} successfully'.format(colorfulOk(token))
+            log(hint)
+        } else {
+            log(colorfulError('rm failed')) 
+        }
+    } else {
+        log(colorfulError('token not exist'))
+    }
+}
+
+const macValid = function() {
+    const name = importBottle.macosName()
+    return name != null
+}
+
+const prepare = function() {
+    importBottle.prepare()
+    importCask.prepare()
+    // axelib.prepare()
+}
+
+const async_call_check_version = function() {
+    const pathMetaBin = importPath.pathMetaBin()
+    const gua = '{}/async_check.gua'.format(pathMetaBin)
+    const c = '(/usr/local/axe/meta/gualang {} > /dev/null 2>&1 &)'.format(gua)
+    importUtil.callWithoutOutput(c)
+}
+
+const async_result_check_version = function() {
+    const pathOutput = importPath.pathAsyncOutput()
+    const e = importUtil.guaFileExist(pathOutput)
+    if (not e) {
+        return null
+    }
+
+    const s = stringFromFile(pathOutput)
+    if (s == '') {
+        return null
+    } else {
+        return s
+    }
+}
+
+const showVersion = function() {
+    const p = importPath.pathMetaBin()
+    const v = '{}/{}'.format(p, 'version')
+    const s = stringFromFile(v)
+    const list = []
+    for (var i = 0; i < s.length(); i += 1) {
+        const c = s[i]
+        list.add(c)
+    }
+    const version = list.join('.')
+    log('axe.store version: {}'.format(version))
+}
+
+const __main = function() {
+    showVersion()
+    importUtil.cleanTmpFiles()
+    if (not macValid()) {
+        log(colorfulError("store.axe do not provide support for your MacOS version. We provice support for MacOS 10.14 and 10.15."))
+        return
+    }
+    const args = os.args
+    prepare()
+
+    const l = args.length()
+    if (l < 2) {
+        return promptHelp()
+    }
+    const inst = args[1]
+    if (inst == 'sou') {
+        async_call_check_version()
+        if (l < 3) {
+            return promptHelp()
+        }
+        const token = args[2]
+        promptSearch(comboSearch, token)
+    } else if (inst == 'get') {
+        if (l < 3) {
+            return promptHelp()
+        }
+        const token = args[2]
+        promptGet(token)
+    } else if (inst == 'update') {
+        const r = importUpdate.updateStore()
+        promptUpdate(r)
+    } else if (inst == 'rm') {
+        const token = args[2]
+        promptRm(token)
+    } else {
+        promptHelp()
+    }
+}
+
+__main()

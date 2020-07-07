@@ -1,0 +1,465 @@
+const readFile = function(path_file) {
+    var c = 'cat "{}"'.format(path_file)
+    var result = call(c)
+    return result
+}
+
+const guaListGetReverse = function(list, i) {
+    var l = list.length()
+    var index = l + i
+    var e = list[index]
+    return e
+}
+
+const guaListSortByKey = function(list, key, reverse=false) {
+    // 这里使用了最简单的排序, O(N*N)
+    const newList = []
+
+    // 先复制一份数据
+    for (var i = 0; i < list.length(); i += 1) {
+        const v = list[i]
+        newList.add(v)
+    }
+
+    const n = newList.length()
+    for (var i = 1; i < n; i += 1) {
+        const v = newList[i]
+        const valueOfKey = v[key]
+        var j = i
+        if (reverse) {
+            while (i > 0 and newList[i-1][key] < valueOfKey) {
+                newList[i] = newList[i-1]
+                i -= 1
+            }
+        } else {
+            while (i > 0 and newList[i-1][key] > valueOfKey) {
+                newList[i] = newList[i-1]
+                i -= 1
+            }
+        }
+        newList[i] = v
+    }
+
+
+    return newList
+}
+
+const guaStringIn = function(str, subStr) {
+    var index = str.find(subStr)
+    return index != -1
+}
+
+const guaStringToInt = function(str) {
+    const s = str
+    var i = 0
+    var n = 0
+    while (i < s.length()) {
+        var integer = '0123456789'.find(s[i])
+        // 不是 int
+        if (integer < 0) {
+            return null
+        }
+        n = n * 10 + integer
+        i += 1
+    }
+    return n
+}
+
+const guaStringMultiply = function(str, num) {
+    var newStr = ''
+    for (var i = 0; i < num; i += 1) {
+        newStr += str
+    }
+    return newStr
+}
+
+const guaStringLower = function(str) {
+    var alpha = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    var newStr = ''
+    var i = 0
+    var l = str.length()
+    while (i < l) {
+        var char = str[i]
+        var index = alpha.find(char)
+        if (index != -1) {
+            if (index >= 26) {
+                var lowerIndex = index - 26
+                newStr += alpha[lowerIndex]
+            } else {
+                newStr += char
+            }
+        } else {
+            newStr += char
+        }
+        i += 1
+    }
+    return newStr
+}
+
+const guaStringFindReverse = function(str, subStr) {
+    var index = 0
+    var skipedLen = 0
+    var found = false
+    while (true) {
+        str = str.cut(index)
+        var newIndex = str.find(subStr)
+        if (newIndex != -1) {
+            found = true
+            index = newIndex + 1
+            skipedLen += index
+        } else {
+            break
+        }
+    }
+    if (found) {
+        return skipedLen - 1
+    } else {
+        return -1
+    }
+}
+
+const guaStringStrip = function(str) {
+    var i = 0
+    var l = str.length()
+    var start = 0
+    while (i < l) {
+        var char = str[i]
+        if (char != ' ') {
+            break
+        } else {
+            i += 1
+            start = i
+        }
+    }
+
+    l = str.length()
+    var end = l
+    while (l > 1) {
+        var char = str[l-1]
+        if (char != ' ') {
+            break
+        } else {
+            l -= 1
+            end = l
+        }
+    }
+    if (end <= start) {
+        return ''
+    } else {
+        var striped = str.cut(start, end)
+        return striped
+    }
+}
+
+const guaStringEndwith = function(str, subStr) {
+    var l1 = str.length()
+    var l2 = subStr.length()
+    var start = l1 - l2
+    var end = l1
+    var s = str.cut(start, end)
+    var e = s == subStr
+    return e
+}
+
+const guaStringStartwith = function(str, subStr) {
+    var l1 = str.length()
+    var l2 = subStr.length()
+    var start = 0
+    var end = l2
+    var s = str.cut(start, end)
+    var e = s == subStr
+    return e
+}
+
+const guaStringMatchScore = function(searchedStr, originalStr) {
+    const l1 = searchedStr.lower()
+    const l2 = originalStr.lower()
+    if (searchedStr == originalStr) {
+        return 100
+    } else if (l1 == l2) {
+        return 90
+    } else if (originalStr.has(searchedStr)) {
+        return 80
+    } else if (l2.has(l1)) {
+        return 70
+    } else {
+        return 0
+    }
+}
+
+const guaStringJoin = function(s, list) {
+    const l = list.length()
+    if (l == 0) {
+        return ''
+    } else {
+        var i = 1
+        var str = list[0]
+        while (i < l) {
+            const e = list[i]
+            const f = '{}{}'.format(s, e)
+            str += f
+            i += 1
+        }
+        return str
+    }   
+}
+
+const guaFilesInDirectory = function(path, needDirectory=true, needFile=true) {
+    var c = 'ls "{}"'.format(path)
+    var r = call(c)
+    if (r == null or r == '') {
+        return []
+    }
+    var lines = r.split('\n')
+    var i = 0
+    var l = lines.length()
+    var files = []
+    while (i < l) {
+        var line = lines[i]
+        var stripedLine = guaStringStrip(line)
+        if (stripedLine != '') {
+            var absPath = '{}/{}'.format(path, line)
+            if (needDirectory) {
+                if (guaFileIsDirectory(absPath)) {
+                    files.add(absPath)
+                }
+            }
+            if (needFile) {
+                if (not guaFileIsDirectory(absPath)) {
+                    files.add(absPath)
+                }
+            }
+        }
+        i += 1
+    }
+    return files
+}
+
+const guaFileType = function(filePath) {
+    var c = 'file "{}"'.format(filePath)
+    var r = call(c)
+    return r
+}
+
+const guaFileSha256 = function(path) {
+    const c = 'shasum -a 256 "{}"'.format(path)
+    const r = call(c)
+    const _sha256 = r.strip(' ').split(' ')[0]
+    return _sha256
+}
+
+const guaFilePermissionWriteAdd = function(path) {
+    // todo 这里要测试和之前逻辑是否一致
+    const c = 'chmod -R +w {}'.format(path)
+    return call(c)
+}
+
+const guaFileIsDirectory = function(path) {
+    var typeStr = guaFileType(path)
+    var d = 'directory\n'
+    var i = guaStringEndwith(typeStr, d)
+    return i
+}
+
+const guaFileIsScript = function(path) {
+    const r = guaFileType(path)
+    const scriptStr = 'script'
+    const i = r.has(scriptStr)
+    return i
+}
+
+const guaFileIsExecutable = function(path) {
+    if (guaFileIsDirectory(path)) {
+        return false
+    }
+    const c = 'find "{}" -perm +111'.format(path)
+    const r = call(c)
+    if (r == null) {
+        return false
+    } else {
+        if (r == '') {
+            return false
+        } else {
+            return true
+        }
+    }
+}
+
+const guaFileExist = function(path, isDirectory=false) {
+    if (isDirectory) {
+        return guaFileIsDirectory(path)
+    } else {
+        const typeStr = guaFileType(path)
+        const d = '(No such file or directory)\n'
+        const notExist = typeStr.endswith(d)
+        const exist = not notExist
+        return exist
+    }
+}
+
+const guaFileDirectoriesByName = function(basePath, directoryName) {
+    const c = 'find {} -type d -name "{}"'.format(basePath, directoryName)
+    const r = call(c)
+    if (r == null or r == '') {
+        return []
+    } else {
+        const newR = r.strip('\n')
+        const dirs = newR.split('\n')
+        return dirs
+    }
+}
+
+const guaFileAllExeInDirectory = function(path) {
+    const c = 'find "{}" -type f -perm +111'.format(path)
+    const r = call(c)
+    if (r == null or r == '') {
+        return []
+    } else {
+        const newR = r.strip('\n')
+        const files = newR.split('\n')
+        const newFiles = []
+        for (var i = 0; i < files.length(); i += 1) {
+            const file = files[i]
+            if (file.endswith('dll') or file.endswith('exe')) {
+                continue
+            }
+            newFiles.add(file)
+        }
+        return newFiles
+    }
+}
+
+const guaFileMkdir = function(path) {
+    const e = guaFileExist(path)
+    if (not e) {
+        const c = 'mkdir -p "{}"'.format(path)
+        return callWithoutOutput(c)
+    } else {
+        return true
+    }
+}
+
+const guaFileCp = function(source, dest) {
+    var c = 'cp -r "{}" "{}"'.format(source, dest)
+    var r = callWithoutOutput(c)
+    return r
+}
+
+const guaFileMv = function(source, dest) {
+    var c = 'mv "{}" "{}"'.format(source, dest)
+    var r = callWithoutOutput(c)
+    return r
+}
+
+const guaFileRm = function(source) {
+    const c = 'rm -rf "{}"'.format(source)
+    var r = callWithoutOutput(c)
+    return r
+}
+
+const guaFileSymbolicLink = function(source, dest) {
+    const c = 'ln -sf "{}" "{}"'.format(source, dest)
+    const r = callWithoutOutput(c)
+    return r
+}
+
+const guaCharIsAlpha = function(char) {
+    var alpha = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    var in = guaStringIn(alpha, char)
+    return in
+}
+
+const guaArrayHas = function(array, element) {
+    for (var i = 0; i < array.length(); i+=1) {
+        const e = array[i]
+        if (e == element) {
+            return true
+        }
+    }
+    return false
+}
+
+const guaUuid = function() {
+    const c = 'uuidgen'
+    var result = os.systemWithOutput(c)
+    result = result.cut(0, result.length() - 1)
+    return result
+}
+
+const guaJsonFromFile = function(file) {
+    var s = stringFromFile(file)
+    var j = json.loads(s)
+    return j
+}
+
+const guaTimestamp = function() {
+    const c = 'date +%s'
+    var _t = call(c)
+    _t = _t.cut(0, _t.length() - 1)
+    const t = guaStringToInt(_t)
+    return t
+}
+
+const _generatedUuid = guaUuid()
+
+const call = function(c) {
+    const fileName = '.gualang_{}.output'.format(_generatedUuid)
+    var outputTmpFile = '/usr/local/axe/meta/{}'.format(fileName)
+    var newCommand = '{} > {}'.format(c, outputTmpFile)
+    var result = os.system(newCommand)
+    if (result == 0) {
+        var r = stringFromFile(outputTmpFile)
+        return r
+    } else {
+        log('call failed <{}>'.format(newCommand))
+        return null
+    }
+}
+
+const callWithoutOutput = function(c) {
+    var result = os.system(c)
+    if (result == 0) {
+        return true
+    } else {
+        log('call failed <{}>'.format(c))
+        return false
+    }
+}
+
+const cleanTmpFiles = function() {
+    // 如果文件不存在
+    // 则删除
+    // 如果存在
+    // 则比较
+    // 删除成功最后更新时间
+    var needClean = false
+    const timestampFile = '/usr/local/axe/meta/{}'.format('.clean.timestamp')
+    const now = guaTimestamp()
+    if (guaFileExist(timestampFile)) {
+        const valueStr = stringFromFile(timestampFile)
+        const value = guaStringToInt(valueStr)
+        const diff = now - value
+        if (diff > 3600) {
+            needClean = true
+        } else {
+            needClean = false
+        }
+    } else {
+        needClean = true
+    }
+
+    if (needClean) {
+        const pattern = '.gualang*'
+        var outputTmpFiles = '/usr/local/axe/meta/{}'.format(pattern)
+        const c = 'rm -rf {}'.format(outputTmpFiles)
+        callWithoutOutput(c)
+        const nowStr = '{}'.format(now)
+        nowStr.writeToFile(timestampFile)
+    }
+}
+
+const ensure = function(condition, message) {
+    if (not condition) {
+        log('*** 测试失败:', message)
+    }
+}

@@ -1,0 +1,376 @@
+const importUtil = import("util")
+const importPath = import('path')
+
+const axeCaskFromFile = function() {
+    var pathDir = importPath.pathMetaBin()
+    var pathJson = '{}/package_source_data/{}'.format(pathDir, 'cask_v2.json')
+    return importUtil.guaJsonFromFile(pathJson)
+}
+
+const redirectedUrl = function(url) {
+    var header = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
+    var c = 'curl -I -i -H "{}" "{}"'.format(header, url)
+    var r = importUtil.call(c)
+    var lines = r.split('\n')
+    var firstLine = lines[0]
+    var httpCode = firstLine.split(' ')[1]
+    var strLocation = 'location'
+    var lenLocation = strLocation.length()
+    if (httpCode == '200') {
+        return url
+    } else if (importUtil.guaStringIn(httpCode, "301") or importUtil.guaStringIn(httpCode, "302")){
+        var i = 0
+        var l = lines.length()
+        while (i < l) {
+            var line = lines[i]
+            line = line.strip('\r')
+            var locationInLine = line.cut(0, lenLocation).lower()
+            if (locationInLine == strLocation) {
+                var redirect = line.cut(lenLocation+1)
+                redirect = redirect.strip()
+                return redirect
+            }
+            i += 1
+        }
+    }
+}
+
+const urlFromCask = function(caskItem) {
+    var rawUrl = caskItem['url']
+    var u = redirectedUrl(rawUrl)
+    if (u == null) {
+        log("download failed, url: {}".format(rawUrl))
+    }
+    return u
+}
+
+const suffixOfFile = function(url) {
+    var r = url
+    var index = importUtil.guaStringFindReverse(r, '.')
+    var s = r.cut(index)
+    var i = 1
+    var len = s.length()
+    while (i < len) {
+        var c = s[i]
+        if (not importUtil.guaCharIsAlpha(c)) {
+            return s.cut(0, i)
+        }
+        i += 1
+    }
+    return s
+}
+
+const prepare = function() {
+    importUtil.guaFileMkdir(importPath.pathHome())
+    importUtil.guaFileMkdir(importPath.pathCaskDownload())
+    importUtil.guaFileMkdir(importPath.pathCaskDecompressed())
+}
+
+const randomDirName = function(xml) {
+    var lines = xml.split('\n')
+    var i = 0
+    var len = lines.length()
+    while (i < len) {
+        var line = lines[i]
+        if (line.find('<key>mount-point</key>') != -1) {
+            var l = lines[i+1]
+            var keyBegin = '<string>'
+            var keyEnd = '</'
+            var begin = l.find(keyBegin) + keyBegin.length()
+            var end = l.find(keyEnd)
+            var path = l.cut(begin, end)
+            return path
+        }
+        i += 1
+    }
+}
+
+const download = function(name, url) {
+    url = url.strip('\r')
+    log('downloading {} from {}'.format(name, url))
+    var f = importPath.pathCaskFileDownload(name)
+    var c = ''
+    url.writeToFile('/tmp/store_url1.log')
+    if (url.has('sourceforge.net')) {
+        // 有些软件带上 header 会下载成 html
+        // 比如这个，https://downloads.sourceforge.net/spimsimulator/QtSpim_9.1.21_mac.pkg
+        c = 'curl --location "{}" > "{}"'.format(url, f)
+    } else {
+        var header = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
+        c = 'curl --location -H "{}" "{}" > "{}"'.format(header, url, f)
+    }
+    importUtil.callWithoutOutput(c)
+}
+
+const unzip = function(name) {
+    var d = importPath.pathCaskDecompressed()
+    var path = '{}/{}'.format(d, name)
+    var f = importPath.pathCaskFileDownload(name)
+    var c = 'unzip -qq "{}" -d "{}"'.format(f, path)
+    importUtil.call(c)
+    return path
+}
+
+const filesFound = function(path, file_format) {
+    var files = importUtil.guaFilesInDirectory(path)
+    var filesWanted = []
+    var i = 0
+    var l = files.length()
+    while (i < l) {
+        var file = files[i]
+        if (importUtil.guaStringEndwith(file, file_format)) {
+            filesWanted.add(file)
+        }
+        i += 1
+    }
+    return filesWanted
+}
+
+const tar = function(name) {
+    var d = importPath.pathCaskDecompressed()
+    var path = '{}/{}'.format(d, name)
+    var f = importPath.pathCaskFileDownload(name)
+    importUtil.guaFileMkdir(path)
+    var c = 'tar xof "{}" -C "{}"'.format(f, path)
+    var result = importUtil.call(c)
+    var files = importUtil.guaFilesInDirectory(path)
+    var len = files.length()
+    if (len == 1) {
+        var firstFile = files[0]
+        if (importUtil.guaStringEndwith(firstFile, '.app')) {
+            return path
+        } else {
+            return firstFile
+        }
+    } else {
+        var i = 0
+        while (i < len) {
+            var file = files[i]
+            if (importUtil.guaStringEndwith(file, '.app')) {
+                return path
+            }
+            i += 1
+        }
+        log('two many files')
+    }
+}
+
+const _convertedDmg = function(name, pathFile) {
+    var m = importPath.pathCaskMount()
+    var nameCdr = '{}.cdr'.format(name)
+    var pathCdr = '{}/{}'.format(m, name_cdr)
+    var c = 'hdiutil convert -quiet -format UDTO -o {} {}'.format(pathCdr, pathFile)
+    importUtil.call(c)
+    return pathCdr
+}
+
+const mount = function(name) {
+    var fileDownload = importPath.pathCaskFileDownload(name)
+    var m = importPath.pathCaskMount()
+    var t = 'echo Y | hdiutil attach -plist -nobrowse -readonly -noidme -mountrandom "{}" "{}"'
+    var c = t.format(m, fileDownload)
+    var result = importUtil.call(c)
+    return randomDirName(result)
+}
+
+const copyToApp = function(path) {
+    var dirs = importUtil.guaFilesInDirectory(path, needFile=false)
+    var i = 0
+    var l = dirs.length()
+    while (i < l) {
+        var dir = dirs[i]
+        if (importUtil.guaStringEndwith(dir, '.app')) {
+            var appName = importUtil.guaListGetReverse(dir, -1)
+            var pathApp = '/Applications/{}'.format(appName)
+
+            if (importUtil.guaFileIsDirectory(pathApp)) {
+                log("already installed")
+                continue
+            } else {
+                var dest = '/Applications'
+                importUtil.guaFileCp(dir, dest)
+            }
+        }
+        i += 1
+    }
+}
+
+const unmount = function(path) {
+    var c = 'diskutil unmount force {}'.format(path)
+    var result = importUtil.call(c)
+}
+
+const installDmg = function(name, url) {
+    download(name, url)
+    var path = mount(name)
+    var filesApp = filesFound(path, 'app')
+    var filesPkg = filesFound(path, 'pkg')
+    var lenApp = filesApp.length()
+    var lenPkg = filesPkg.length()
+    if (lenApp > 0) {
+        copyToApp(path)
+    } else if (lenPkg > 0) {
+        var filePkg = filesPkg[0]
+        _installPkg(filePkg)
+    }
+    unmount(path)
+}
+
+const installZip = function(name, url) {
+    download(name, url)
+    var path = unzip(name)
+    copyToApp(path)
+}
+
+const installTar = function(name, url) {
+    download(name, url)
+    var path = tar(name)
+    copyToApp(path)
+}
+
+const installPkg = function(name, url) {
+    download(name, url)
+    var fileAxestore = importPath.pathCaskFileDownload(name)
+    var index = importUtil.guaStringFindReverse(fileAxestore, '.')
+    var filePkg = fileAxestore.cut(0, index) + '.pkg'
+    importUtil.guaFileMv(fileAxestore, filePkg)
+    _installPkg(filePkg)
+}
+
+
+const _installPkg = function(pkgPath) {
+    var c = "sudo installer -pkg '{}' -target /".format(pkgPath)
+    importUtil.call(c)
+}
+
+const nameFromToken = function(token) {
+    const pathDir = importPath.pathMetaBin()
+    const pathJson = '{}/package_source_data/{}'.format(pathDir, 'cask_token_name_map.json')
+    const j = importUtil.guaJsonFromFile(pathJson)
+    if (j.has(token)) {
+        return j[token]
+    } else {
+        return null
+    }
+}
+
+const caskFromToken = function(token) {
+    const d = axeCaskFromFile()
+    const name = nameFromToken(token)
+    if (name == null) {
+        return null
+    }
+    
+    var keys = d.keys()
+	for(var i = 0; i < keys.length(); i+=1) {
+        var key = keys[i]
+        if (key.lower() == name.lower()) {
+		    var item = d[key]
+            var j = json.loads(item)
+            return j
+        }
+    }
+    return null
+}
+
+const tokenExist = function(token) {
+    const t = caskFromToken(token)
+    return t != null
+}
+
+const search = function(name) {
+    const axeCask = axeCaskFromFile()
+    const searchNames = []
+
+    var keys = axeCask.keys()
+    for(var i = 0; i < keys.length(); i+=1) {
+        var key = keys[i]
+        var itemName = key
+
+        const score = importUtil.guaStringMatchScore(name, itemName)
+        if (score <= 0) {
+            continue
+        } else {
+            var item = json.loads(axeCask[key])
+            const version = item['version']
+            const token = item['token']
+            const _item = {
+                'name': itemName,
+                'version': version,
+                'token': token,
+                'score': score,
+            }
+            searchNames.add(_item)
+        }
+    }
+
+    const sortedNames = importUtil.guaListSortByKey(searchNames, 'score', reverse=true)
+    return sortedNames
+}
+
+const get = function(token) {
+    const item = caskFromToken(token)
+    var name = token
+    var url = urlFromCask(item)
+    if (url == null) {
+        return false
+    }
+    remove(token, needLog=false)
+    var s = suffixOfFile(url)
+    if (s == '.zip') {
+        installZip(name, url)
+    } else if (s == '.dmg') {
+        installDmg(name, url)
+    } else if (s == '.pkg') {
+        installPkg(name, url)
+    } else if (s == '.tar') {
+        installTar(name, url)
+    } else {
+        log('not support file {}'.format(url))
+        return false
+    }
+    return true
+}
+
+const remove = function(token, needLog=true) {
+    const cask = caskFromToken(token)
+    const artifacts = cask['artifacts']
+
+    var appInstalled = []
+    for (var i = 0; i < artifacts.length(); i += 1) {
+        const item = artifacts[i]
+        if (type(item) == Array) {
+            appInstalled = item
+            break 
+        }
+    }
+    for (var i = 0; i < appInstalled.length(); i += 1) {
+        const app = appInstalled[i]
+        const p = '/Applications/{}'.format(app)
+        const e = importUtil.guaFileExist(p, isDirectory=true)
+        if (e) {
+            if (needLog) {
+                log('rm', p)
+            }
+            importUtil.guaFileRm(p)
+        } else {
+            if (needLog) {
+                log('file<{}> not exist'.format(p))
+            }
+            return false
+        }
+    }
+    return true
+}
+
+
+const __main = function() {
+    // var name = 'qqm'
+    // var url = 'https://dldir1.qq.com/music/clntupate/mac/QQMusicMac_Mgr.dmg'
+    // installDmg(name, url)
+    // get('qqmusic')
+    // search('qq')
+    // get("teamviewer")
+}
+
+// __main()

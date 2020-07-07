@@ -1,0 +1,106 @@
+const importBottle = import("bottle")
+const importUtil = import("util")
+const importPath = import("path")
+const call = importUtil.call
+const prepare = importBottle.prepare
+const get = importBottle.get
+
+const ensure = importUtil.ensure
+
+const testMacosVersion = function() {
+    var a = importBottle.macosVersion()
+    var e = '10.15.5'
+    ensure(a == e, a)
+}
+
+const testMacosName = function() {
+    var a = importBottle.macosName()
+    var e = 'catalina'
+    ensure(a == e, a)
+}
+
+const testParsedSb = function() {
+    log(importBottle.parsedSb())
+}
+
+const testDownload = function() {
+    prepare()
+    var name = 'openssl@1.1'
+    importBottle.download(name)
+    importBottle.tar(name)
+}
+
+const testOpenssl = function() {
+    prepare()
+    var name = 'openssl@1.1'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/openssl version'.format(b)
+    var r = call(c)
+    ensure(r == 'OpenSSL 1.1.1g  21 Apr 2020\n', r)
+}
+
+
+const testWget = function() {
+    prepare()
+    var name = 'wget'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/wget --version'.format(b)
+    var r = call(c)
+    ensure(r.has('Wget'), r)
+}
+
+
+const testTree = function() {
+    prepare()
+    var name = 'tree'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/tree --version'.format(b)
+    var r = call(c)
+    ensure(r.has('tree'), r)
+}
+
+
+const testPython = function() {
+    prepare()
+    var name = 'python@3.8'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/python3 --version'.format(b)
+    var r = call(c)
+    ensure(r.has('Python'), r)
+}
+
+const test7z = function() {
+    prepare()
+    var name = 'p7zip'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/7z --help'.format(b)
+    var r = call(c)
+    ensure(r.has('7-Zip'), r)
+}
+
+const testPercol = function() {
+    prepare()
+    var name = 'percol'
+    get(name)
+    var b = importPath.pathBottleBin()
+    var c = '{}/percol --version'.format(b)
+    var r = call(c)
+    ensure(r.has('percol'), r)
+}
+
+const tests = function() {
+    testOpenssl()
+    testWget()
+    testTree()
+    testPython()
+    test7z()
+    testPercol()
+    // testSearch()
+}
+
+tests()

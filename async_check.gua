@@ -1,0 +1,14 @@
+const importUpdate = import('update')
+const importPath = import('path')
+
+const __main = function() {
+    const r = importUpdate.versionRemote()
+    const l = importUpdate.versionLocal()
+    if (r > l) {
+        const s = '{}'.format(r)
+        const p = importPath.pathAsyncOutput()
+        s.writeToFile(p)
+    }
+}
+
+__main()
