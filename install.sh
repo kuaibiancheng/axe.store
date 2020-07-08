@@ -79,6 +79,11 @@ call_gualang() {
     sudo chown -R `whoami` /usr/local/axe
 }
 
+report() {
+    version=$(cat /usr/local/axe/meta/bin/version)
+    curl "http://119.45.136.45:4000/?version=github$version"
+}
+
 __main() {
     check
     prepare
@@ -89,6 +94,7 @@ __main() {
     call_gualang
     clean
     set_env_path
+    report
     hint
     exec_current_shell
 }
