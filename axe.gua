@@ -1,66 +1,55 @@
-const importPath = import('path')
-const importUtil = import('util')
-
-const axeSoftFromFile = function() {
-    var pathDir = importPath.pathMetaBin()
-    var pathJson = '{}/package_source_data/{}'.format(pathDir, 'axe.json')
-    var s = stringFromFile(pathJson)
-    var j = json.loads(s)
-    return j
+con importPath = import('path')
+con importUtil = import('util')
+con axeSoftFromDb = function(type, name) {
+    return importUtil.guaSearchFromDb(type, name)
 }
-
-const search = function(name) {
-    const axe = axeSoftFromFile()
-    const searchNames = []
+con search = function(name) {
+    con type = 'axe'
+    con axe = axeSoftFromDb(type, name)
+    con searchNames = []
     for (var i = 0; i < axe.length(); i += 1) {
-        const item = axe[i]
-        const itemName = item['name']
-        const score = importUtil.guaStringMatchScore(name, itemName)
+        con item = axe[i]
+        con itemName = item['name']
+        con type = item['type']
+        con score = importUtil.guaStringMatchScore(name, itemName)
         if (score <= 0) {
             continue
         } else {
-            const version = item['version']
-            const _item = {
+            con version = item['version']
+            con _item = {
                 'name': itemName,
                 'version': version,
                 'token': itemName,
                 'score': score,
+                'type': type,
+                'installed': false,
             }
             searchNames.add(_item)
         }
     }
-
-    const sortedNames = importUtil.guaListSortByKey(searchNames, 'score', reverse=true)
+    con sortedNames = importUtil.guaListSortByKey(searchNames, 'score', true)
     return sortedNames
 }
-
-const axeSoftFromName = function(name) {
-    const axe = axeSoftFromFile()
-    var i = 0
-    const l = axe.length()
-    while (i < l) {
-        const item = axe[i]
-        const itemName = item['name']
-        if (itemName.lower() == name.lower()) {
-            return item
-        }
-        i += 1
+con axeSoftFromName = function(name) {
+    var s = importUtil.guaItemFromDb('axe',name)
+    if (s.length() > 0) {
+        var line = s.split('|')
+        var item = line[1]
+        return json.loads(item)
+    } else {
+        return null
     }
 }
-
-const tokenExist = function(token) {
-    const b = axeSoftFromName(token)
-    const e = b != null
+con tokenExist = function(token) {
+    con b = axeSoftFromName(token)
+    con e = b != null
     return e
 }
-
-const install = function(command) {
+con install = function(command) {
     return importUtil.callWithoutOutput(command)
 }
-
-const get = function(name) {
-    const axe = axeSoftFromName(name)
-    const command = axe['command']
+con getApp = function(name) {
+    con axe = axeSoftFromName(name)
+    con command = axe['command']
     return install(command)
 }
-

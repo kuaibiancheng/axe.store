@@ -1,48 +1,10 @@
-const importUtil = import("util")
-
-
-const fileExist = function(file_path) {
-    var exist = importUtil.guaFileExist(file_path)
-    return exist
+con importSetup = import('_setup')
+con username = function() {
+    con args = os.args.cut(1)
+    var s = args[1]
+    return s
 }
-
-const linesFromFile = function(path) {
-    var content = importUtil.readFile(path)
-    var lines = content.split('\n')
-    return lines
+con __main = function() {
+    importSetup.addToPaths()
+    importSetup.addToShells(username())
 }
-
-const writeLinesToFile = function(path, lines) {
-    var cleanedContent = lines.join('\n')
-    cleanedContent.writeToFile(path)
-}
-
-const addToPaths = function() {
-    var path = '/etc/paths'
-    var lines = linesFromFile(path)
-    var cleanedLines = []
-
-    var i = 0
-    while (i < lines.length()) {
-        i += 1
-        var index = i - 1
-        var line = lines[index]
-
-        if (line.startswith('/usr/local/axe')) {
-            continue
-        } else if (line.strip() == '') {
-            continue
-        } else {
-            cleanedLines.add(line)
-        }
-    }
-    var axeBin = '/usr/local/axe/bin\n'
-    cleanedLines.add(axeBin)
-    writeLinesToFile(path, cleanedLines)
-}
-
-const __main = function() {
-    addToPaths()
-}
-
-__main()

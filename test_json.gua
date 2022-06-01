@@ -1,0 +1,87 @@
+con importBottle = import("bottle")
+con importUtil = import("util")
+con importPath = import("path")
+con call = importUtil.call
+con ensure = importUtil.ensure
+con jq = importUtil.jq
+con suffixPath = '/usr/local/axe/meta/gualang ./store.gua'
+con test_version = function() {
+    var c = '{} {} --json'.format(suffixPath, 'version')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_sou_qq = function() {
+    var c = '{} {} {} --json'.format(suffixPath, 'sou', 'qq')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_sou_qq_cask = function() {
+    var c = '{} {} {} {} --json'.format(suffixPath, 'sou', 'qq', '--cask')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_sou_tree = function() {
+    var c = '{} {} {} --json'.format(suffixPath, 'sou', 'tree')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_sou_none = function() {
+    var c = '{} {} {} --json'.format(suffixPath, 'sou', 'none')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_get_none = function() {
+    var c = '{} {} {} {} --json'.format(suffixPath, 'get', 'none', '--cask')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_get_qqmusic = function() {
+    var c = '{} {} {} {} --json'.format(suffixPath, 'get',' qqmusic', '--cask')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_get_p7zip = function() {
+    var c = '{} {} {} {} --json'.format(suffixPath, 'get', 'p7zip', '--bottle')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_rm_qqmusic = function() {
+    var c = '{} {} {} --json'.format(suffixPath, 'rm', 'qqmusic')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con test_update_store = function() {
+    var c = '{} {} {} --json'.format(suffixPath, 'update', '')
+    var r = call(c)
+    jq(r)
+    r = json.loads(r)
+    ensure(type(r) == type({}), r)
+}
+con tests = function() {
+    test_sou_qq()
+    test_sou_tree()
+    test_sou_none()
+    test_sou_qq_cask()
+    test_rm_qqmusic()
+    test_update_store()
+    test_version()
+}
+tests()

@@ -1,13 +1,12 @@
-const importUtil = import("util")
-const importPath = import('path')
-
-const axeCaskFromFile = function() {
-    var pathDir = importPath.pathMetaBin()
-    var pathJson = '{}/package_source_data/{}'.format(pathDir, 'cask_v2.json')
-    return importUtil.guaJsonFromFile(pathJson)
+con importUtil = import("util")
+con importPath = import('path')
+con importConfig = import('config')
+con isJson = importConfig.config.isJson
+con wirteLogFile = importUtil.wirteLogFile
+con axeCaskFromDb = function(type, name) {
+    return importUtil.guaSearchFromDb(type, name)
 }
-
-const redirectedUrl = function(url) {
+con redirectedUrl = function(url) {
     var header = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
     var c = 'curl -I -i -H "{}" "{}"'.format(header, url)
     var r = importUtil.call(c)
@@ -34,17 +33,20 @@ const redirectedUrl = function(url) {
         }
     }
 }
-
-const urlFromCask = function(caskItem) {
+con urlFromCask = function(caskItem) {
     var rawUrl = caskItem['url']
     var u = redirectedUrl(rawUrl)
     if (u == null) {
-        log("download failed, url: {}".format(rawUrl))
+        if (isJson) {
+            con m = "download failed, url: {}".format(rawUrl)
+            wirteLogFile(m)
+        } else {
+            log("download failed, url: {}".format(rawUrl))
+        }
     }
     return u
 }
-
-const suffixOfFile = function(url) {
+con suffixOfFile = function(url) {
     var r = url
     var index = importUtil.guaStringFindReverse(r, '.')
     var s = r.cut(index)
@@ -59,14 +61,12 @@ const suffixOfFile = function(url) {
     }
     return s
 }
-
-const prepare = function() {
+con prepare = function() {
     importUtil.guaFileMkdir(importPath.pathHome())
     importUtil.guaFileMkdir(importPath.pathCaskDownload())
     importUtil.guaFileMkdir(importPath.pathCaskDecompressed())
 }
-
-const randomDirName = function(xml) {
+con randomDirName = function(xml) {
     var lines = xml.split('\n')
     var i = 0
     var len = lines.length()
@@ -84,34 +84,30 @@ const randomDirName = function(xml) {
         i += 1
     }
 }
-
-const download = function(name, url) {
+con download = function(name, url) {
     url = url.strip('\r')
-    log('downloading {} from {}'.format(name, url))
     var f = importPath.pathCaskFileDownload(name)
     var c = ''
     url.writeToFile('/tmp/store_url1.log')
     if (url.has('sourceforge.net')) {
-        // 有些软件带上 header 会下载成 html
-        // 比如这个，https://downloads.sourceforge.net/spimsimulator/QtSpim_9.1.21_mac.pkg
-        c = 'curl --location "{}" > "{}"'.format(url, f)
+        c = 'curl --location "{}" > "{}" --progress-bar'.format(url, f)
     } else {
         var header = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
-        c = 'curl --location -H "{}" "{}" > "{}"'.format(header, url, f)
+        c = 'curl --location -H "{}" "{}" > "{}" --progress-bar'.format(header, url, f)
     }
     importUtil.callWithoutOutput(c)
 }
-
-const unzip = function(name) {
+con unzip = function(name) {
     var d = importPath.pathCaskDecompressed()
     var path = '{}/{}'.format(d, name)
+    con clear = 'rm -rf {}'.format(path)
+    importUtil.call(clear)
     var f = importPath.pathCaskFileDownload(name)
     var c = 'unzip -qq "{}" -d "{}"'.format(f, path)
     importUtil.call(c)
     return path
 }
-
-const filesFound = function(path, file_format) {
+con filesFound = function(path, file_format) {
     var files = importUtil.guaFilesInDirectory(path)
     var filesWanted = []
     var i = 0
@@ -125,11 +121,12 @@ const filesFound = function(path, file_format) {
     }
     return filesWanted
 }
-
-const tar = function(name) {
+con tar = function(name) {
     var d = importPath.pathCaskDecompressed()
     var path = '{}/{}'.format(d, name)
     var f = importPath.pathCaskFileDownload(name)
+    con clear = 'rm -rf {}'.format(path)
+    importUtil.call(clear)
     importUtil.guaFileMkdir(path)
     var c = 'tar xof "{}" -C "{}"'.format(f, path)
     var result = importUtil.call(c)
@@ -151,20 +148,17 @@ const tar = function(name) {
             }
             i += 1
         }
-        log('two many files')
     }
 }
-
-const _convertedDmg = function(name, pathFile) {
+con _convertedDmg = function(name, pathFile) {
     var m = importPath.pathCaskMount()
     var nameCdr = '{}.cdr'.format(name)
-    var pathCdr = '{}/{}'.format(m, name_cdr)
+    var pathCdr = '{}/{}'.format(m, nameCdr)
     var c = 'hdiutil convert -quiet -format UDTO -o {} {}'.format(pathCdr, pathFile)
     importUtil.call(c)
     return pathCdr
 }
-
-const mount = function(name) {
+con mount = function(name) {
     var fileDownload = importPath.pathCaskFileDownload(name)
     var m = importPath.pathCaskMount()
     var t = 'echo Y | hdiutil attach -plist -nobrowse -readonly -noidme -mountrandom "{}" "{}"'
@@ -172,9 +166,8 @@ const mount = function(name) {
     var result = importUtil.call(c)
     return randomDirName(result)
 }
-
-const copyToApp = function(path) {
-    var dirs = importUtil.guaFilesInDirectory(path, needFile=false)
+con copyToApp = function(path) {
+    var dirs = importUtil.guaFilesInDirectory(path, true, false)
     var i = 0
     var l = dirs.length()
     while (i < l) {
@@ -182,9 +175,7 @@ const copyToApp = function(path) {
         if (importUtil.guaStringEndwith(dir, '.app')) {
             var appName = importUtil.guaListGetReverse(dir, -1)
             var pathApp = '/Applications/{}'.format(appName)
-
             if (importUtil.guaFileIsDirectory(pathApp)) {
-                log("already installed")
                 continue
             } else {
                 var dest = '/Applications'
@@ -194,13 +185,11 @@ const copyToApp = function(path) {
         i += 1
     }
 }
-
-const unmount = function(path) {
+con unmount = function(path) {
     var c = 'diskutil unmount force {}'.format(path)
     var result = importUtil.call(c)
 }
-
-const installDmg = function(name, url) {
+con installDmg = function(name, url) {
     download(name, url)
     var path = mount(name)
     var filesApp = filesFound(path, 'app')
@@ -215,20 +204,23 @@ const installDmg = function(name, url) {
     }
     unmount(path)
 }
-
-const installZip = function(name, url) {
+con installZip = function(name, url) {
     download(name, url)
     var path = unzip(name)
-    copyToApp(path)
+    var filesPkg = filesFound(path, 'pkg')
+    if (filesPkg.length() > 0) {
+        var filePkg = filesPkg[0]
+        _installPkg(filePkg)
+    } else {
+        copyToApp(path)
+    }
 }
-
-const installTar = function(name, url) {
+con installTar = function(name, url) {
     download(name, url)
     var path = tar(name)
     copyToApp(path)
 }
-
-const installPkg = function(name, url) {
+con installPkg = function(name, url) {
     download(name, url)
     var fileAxestore = importPath.pathCaskFileDownload(name)
     var index = importUtil.guaStringFindReverse(fileAxestore, '.')
@@ -236,86 +228,69 @@ const installPkg = function(name, url) {
     importUtil.guaFileMv(fileAxestore, filePkg)
     _installPkg(filePkg)
 }
-
-
-const _installPkg = function(pkgPath) {
+con _installPkg = function(pkgPath) {
     var c = "sudo installer -pkg '{}' -target /".format(pkgPath)
     importUtil.call(c)
 }
-
-const nameFromToken = function(token) {
-    const pathDir = importPath.pathMetaBin()
-    const pathJson = '{}/package_source_data/{}'.format(pathDir, 'cask_token_name_map.json')
-    const j = importUtil.guaJsonFromFile(pathJson)
-    if (j.has(token)) {
-        return j[token]
+con caskFromToken = function(token) {
+    var s = importUtil.guaItemFromDb('cask', token)
+    if (s.length() > 0) {
+        var line = s.split('|')
+        var item = line[3]
+        return json.loads(item)
     } else {
         return null
     }
 }
-
-const caskFromToken = function(token) {
-    const d = axeCaskFromFile()
-    const name = nameFromToken(token)
-    if (name == null) {
-        return null
-    }
-    
-    var keys = d.keys()
-	for(var i = 0; i < keys.length(); i+=1) {
-        var key = keys[i]
-        if (key.lower() == name.lower()) {
-		    var item = d[key]
-            var j = json.loads(item)
-            return j
-        }
-    }
-    return null
+con versionFromCask = function(s) {
+    s = s.replace(',', '.')
+    s = s.replace('-', '.')
+    var numbers = s.split('.')
+    numbers = numbers.cut(0, 3)
+    con version = numbers.join('.')
+    return version
 }
-
-const tokenExist = function(token) {
-    const t = caskFromToken(token)
+con tokenExist = function(token) {
+    con t = caskFromToken(token)
     return t != null
 }
-
-const search = function(name) {
-    const axeCask = axeCaskFromFile()
-    const searchNames = []
-
-    var keys = axeCask.keys()
-    for(var i = 0; i < keys.length(); i+=1) {
-        var key = keys[i]
-        var itemName = key
-
-        const score = importUtil.guaStringMatchScore(name, itemName)
-        if (score <= 0) {
+con search = function(name) {
+    con type = 'cask'
+    var s = axeCaskFromDb(type, name)
+    var lines = s.split('\n')
+    var searchNames = []
+    for (i, e in lines) {
+        if (e == '') {
             continue
-        } else {
-            var item = json.loads(axeCask[key])
-            const version = item['version']
-            const token = item['token']
-            const _item = {
-                'name': itemName,
-                'version': version,
-                'token': token,
-                'score': score,
-            }
-            searchNames.add(_item)
         }
+        var line = e.split('|')
+        var itemName = line[0]
+        var token = line[1]
+        var artifacts = line[2]
+        var item = json.loads(line[3])
+        con version = versionFromCask(item['version'])
+        con _item = {
+            'name': itemName,
+            'version': version,
+            'installed': hasInstalled(artifacts),
+            'token': token,
+        }
+        searchNames.add(_item)
     }
-
-    const sortedNames = importUtil.guaListSortByKey(searchNames, 'score', reverse=true)
-    return sortedNames
+    return searchNames
 }
-
-const get = function(token) {
-    const item = caskFromToken(token)
+con getApp = function(token) {
+    con item = caskFromToken(token)
     var name = token
     var url = urlFromCask(item)
     if (url == null) {
+        if (isJson) {
+            con m = '{} download url is null'.format(name)
+            wirteLogFile(m)
+        }
         return false
     }
-    remove(token, needLog=false)
+    remove(token, false)
     var s = suffixOfFile(url)
     if (s == '.zip') {
         installZip(name, url)
@@ -326,28 +301,72 @@ const get = function(token) {
     } else if (s == '.tar') {
         installTar(name, url)
     } else {
-        log('not support file {}'.format(url))
+        if (isJson) {
+            con m = '{} not support file'.format(url)
+            wirteLogFile(m)
+        } else {
+            log('not support file {}'.format(url))
+        }
         return false
     }
+    addCmd(item)
+    importUtil.addInstalled(token)
     return true
 }
-
-const remove = function(token, needLog=true) {
-    const cask = caskFromToken(token)
-    const artifacts = cask['artifacts']
-
+con addCmd = function(cask) {
+    con artifacts = cask['artifacts']
+    var cmds = []
+    for (var i = 0; i < artifacts.length(); i += 1) {
+        con item = artifacts[i]
+        if (type(item) == type([])) {
+            cmds.add(item)
+        }
+    }
+    for (var i = 0; i < cmds.length(); i += 1) {
+        con cmd = cmds[i]
+        var pathCmd = null
+        var target = null
+        if (cmd.length() == 1) {
+            var c = cmd[0]
+            if (c.startswith('/Applications')) {
+                pathCmd = c
+                target = c.split('/')[-1]
+            }
+        } else if (cmd.length() > 1) {
+            var c = cmd[0]
+            var t = cmd[1]
+            if (c.startswith('/Applications')) {
+                pathCmd = c
+                if (t.has('target')) {
+                    target = t.get('target')
+                } else {
+                    target = c.split('/')[-1]
+                }
+            }
+        }
+        if (pathCmd != null and target != null) {
+            var source = pathCmd
+            var binPrefix = importPath.pathBottleBin()
+            var dest = '{}/{}'.format(binPrefix, target)
+            importUtil.guaFileSymbolicLink(source, dest)
+        }
+    }
+}
+con remove = function(token, needLog=true) {
+    con cask = caskFromToken(token)
+    con artifacts = cask['artifacts']
     var appInstalled = []
     for (var i = 0; i < artifacts.length(); i += 1) {
-        const item = artifacts[i]
-        if (type(item) == Array) {
+        con item = artifacts[i]
+        if (type(item) == type([])) {
             appInstalled = item
             break 
         }
     }
     for (var i = 0; i < appInstalled.length(); i += 1) {
-        const app = appInstalled[i]
-        const p = '/Applications/{}'.format(app)
-        const e = importUtil.guaFileExist(p, isDirectory=true)
+        con app = appInstalled[i]
+        con p = '/Applications/{}'.format(app)
+        con e = importUtil.guaFileExist(p, true)
         if (e) {
             if (needLog) {
                 log('rm', p)
@@ -362,15 +381,16 @@ const remove = function(token, needLog=true) {
     }
     return true
 }
-
-
-const __main = function() {
-    // var name = 'qqm'
-    // var url = 'https://dldir1.qq.com/music/clntupate/mac/QQMusicMac_Mgr.dmg'
-    // installDmg(name, url)
-    // get('qqmusic')
-    // search('qq')
-    // get("teamviewer")
+con hasInstalled = function(artifacts) {
+    if (artifacts == '') {
+        return false
+    }
+    con pathSuffix = importPath.pathApplications()
+    var p = '{}/{}'.format(pathSuffix, artifacts)
+    if (importUtil.guaFileExist(p, true)) {
+        return true
+    }
+    return false
 }
-
-// __main()
+con __main = function() {
+}

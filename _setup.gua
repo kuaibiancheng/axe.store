@@ -1,0 +1,103 @@
+con importUtil = import("util")
+con fileExist = function(file_path) {
+    var exist = importUtil.guaFileExist(file_path)
+    return exist
+}
+con linesFromFile = function(path) {
+    var content = importUtil.readFile(path)
+    var lines = content.split('\n')
+    return lines
+}
+con writeLinesToFile = function(path, lines) {
+    var cleanedContent = lines.join('\n')
+    cleanedContent.writeToFile(path)
+}
+con addToPaths = function() {
+    var path = '/etc/paths'
+    var lines = linesFromFile(path)
+    var cleanedLines = []
+    var i = 0
+    while (i < lines.length()) {
+        i += 1
+        var index = i - 1
+        var line = lines[index]
+        if (line.startswith('/usr/local/axe')) {
+            continue
+        } else if (line.strip() == '') {
+            continue
+        } else {
+            cleanedLines.add(line)
+        }
+    }
+    var axeBin = '/usr/local/axe/bin\n'
+    cleanedLines.add(axeBin)
+    writeLinesToFile(path, cleanedLines)
+}
+con shellrcPath = function(shell, user) {
+    var rcFile = ''
+    if (shell == 'zsh') {
+        rcFile = '.zshrc'
+    } else if (shell == 'bash') {
+        rcFile = '.bashrc'
+    } else {
+        return null
+    }
+    var p = '/Users/{}/{}'.format(user, rcFile)
+    return p
+}
+con hasAddShellFunction = function(path) {
+    con e = importUtil.guaFileExist(path)
+    if (not e) {
+        return false
+    } else {
+        var content = stringFromFile(path)
+        return content.has('store.axe')
+    }
+}
+con addShellFunction = function(path, user) {
+    if (path == null) {
+        return
+    }
+    con e = importUtil.guaFileExist(path)
+    if (not e) {
+        ''.writeToFile(path)
+        con c = 'chown {} {}'.format(user, path)
+        importUtil.callWithoutOutput(c)
+    }
+    var content = stringFromFile(path)
+    if (content.has('store.axe')) {
+        return
+    } else {
+        con lines = linesFromFile(path)
+        con func = `
+# axe init
+store.axe()
+{
+    /usr/local/axe/meta/gualang /usr/local/axe/meta/bin/store.gua "$@"
+    hash -r
+}
+# axe init
+`
+        con addLines = func.split('\n')
+        lines.extend(addLines)
+        writeLinesToFile(path, lines)
+    }
+}
+con addToShells = function(user) {
+    var pathZsh = shellrcPath('zsh', user)
+    var pathBash = shellrcPath('bash', user)
+    var e1 = hasAddShellFunction(pathZsh)
+    var e2 = hasAddShellFunction(pathBash)
+    if (e1 and e2) {
+        return false
+    }
+    var shells = [
+        pathZsh,
+        pathBash,
+    ]
+    for (var i = 0; i < shells.length(); i += 1) {
+        var path = shells[i]
+        addShellFunction(path, user)
+    }
+    return true
+}

@@ -1,64 +1,66 @@
-const importUtil = import("util")
-const importPath = import("path")
-
-const versionLocal = function() {
-    const metaBin = importPath.pathMetaBin()
-    const versionFile = '{}/{}'.format(metaBin, 'version')
+con importUtil = import("util")
+con importPath = import("path")
+con importConfig = import("config")
+con isJson = importConfig.config.isJson
+con wirteLogFile = importUtil.wirteLogFile
+con versionLocal = function() {
+    con metaBin = importPath.pathMetaBin()
+    con versionFile = '{}/{}'.format(metaBin, 'version')
     if (importUtil.guaFileExist(versionFile)) {
-        const c = 'cat {}'.format(versionFile)
-        const r = importUtil.call(c)
+        con c = 'cat {}'.format(versionFile)
+        con r = importUtil.call(c)
         return importUtil.guaStringToInt(r)
     } else {
         return 0
     }
 }
-
-const versionRemote = function() {
-    const c = 'curl https://github.com/kuaibiancheng/axe.store/raw/master/version'
-    const r = importUtil.call(c)
-    var version = importUtil.guaStringToInt(r)
-    return version
+con versionRemote = function() {
+    con c = 'curl -sL https://github.com/kuaibiancheng/axe.store/raw/master/version'
+    con r = os.exec(c)
+    if (r.exitCode == 0) {
+        con output = r.output
+        var version = int(output)
+        return version
+    } else {
+        if (isJson) {
+            con m = "由于网络问题未检查更新"
+            wirteLogFile(m)
+        } else {
+            log('由于网络问题未检查更新')
+        }
+        return -1
+    }
 }
-
-const checkVersion = function() {
-    const l = versionLocal()
-    const r = versionRemote()
-
-    const isOldVersion = r > l
+con checkVersion = function() {
+    con l = versionLocal()
+    con r = versionRemote()
+    con isOldVersion = r > l
     return isOldVersion
 }
-
-const replaceMeta = function() {
-    // 先把代码下载下来到临时目录
-    // 复制代码到 meta bin
-    // 删除临时目录
-    const pathTmp = '{}/tmp_repo'.format(importPath.pathHome())
-    const repoUrl = 'https://github.com/kuaibiancheng/axe.store'
-    const commandGit = 'git clone --depth=1 {} {}'.format(repoUrl, pathTmp)
+con replaceMeta = function() {
+    con pathTmp = '{}/tmp_repo'.format(importPath.pathHome())
+    con repoUrl = 'https://github.com/kuaibiancheng/axe.store'
+    con commandGit = 'git clone --depth=1 {} {}'.format(repoUrl, pathTmp)
     importUtil.call(commandGit)
-    const pathMetaBin = importPath.pathMetaBin()
-    const commandCp = 'cp -r {}/* {}'.format(pathTmp, pathMetaBin)
+    con pathMetaBin = importPath.pathMetaBin()
+    con commandCp = 'cp -r {}/* {}'.format(pathTmp, pathMetaBin)
     importUtil.call(commandCp)
-
     updateGualang(pathTmp)
     importUtil.guaFileRm(pathTmp)
 }
-
-const updateGualang = function(repoPath) {
-    const c1 = 'cp {}/gualang/* /usr/local/axe/meta'.format(repoPath)
-    const c2 = "chmod +x /usr/local/axe/meta/gualang"
+con updateGualang = function(repoPath) {
+    con c1 = 'cp {}/gualang/* /usr/local/axe/meta'.format(repoPath)
+    con c2 = "chmod +x /usr/local/axe/meta/gualang"
     importUtil.callWithoutOutput(c1)
     importUtil.callWithoutOutput(c2)
 }
-
-const clear = function() {
-    const pathOutput = importPath.pathAsyncOutput()
+con clear = function() {
+    con pathOutput = importPath.pathAsyncOutput()
     importUtil.guaFileRm(pathOutput)
 }
-
-const updateStore = function() {
+con updateStore = function() {
     clear()
-    const isOldVersion = checkVersion()
+    con isOldVersion = checkVersion()
     if (isOldVersion) {
         replaceMeta()
         return true

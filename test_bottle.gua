@@ -1,36 +1,30 @@
-const importBottle = import("bottle")
-const importUtil = import("util")
-const importPath = import("path")
-const call = importUtil.call
-const prepare = importBottle.prepare
-const get = importBottle.get
-
-const ensure = importUtil.ensure
-
-const testMacosVersion = function() {
+con importBottle = import("bottle")
+con importUtil = import("util")
+con importPath = import("path")
+con call = importUtil.call
+con prepare = importBottle.prepare
+con get = importBottle.get
+con ensure = importUtil.ensure
+con testMacosVersion = function() {
     var a = importBottle.macosVersion()
     var e = '10.15.5'
     ensure(a == e, a)
 }
-
-const testMacosName = function() {
+con testMacosName = function() {
     var a = importBottle.macosName()
     var e = 'catalina'
     ensure(a == e, a)
 }
-
-const testParsedSb = function() {
+con testParsedSb = function() {
     log(importBottle.parsedSb())
 }
-
-const testDownload = function() {
+con testDownload = function() {
     prepare()
     var name = 'openssl@1.1'
     importBottle.download(name)
     importBottle.tar(name)
 }
-
-const testOpenssl = function() {
+con testOpenssl = function() {
     prepare()
     var name = 'openssl@1.1'
     get(name)
@@ -39,9 +33,7 @@ const testOpenssl = function() {
     var r = call(c)
     ensure(r == 'OpenSSL 1.1.1g  21 Apr 2020\n', r)
 }
-
-
-const testWget = function() {
+con testWget = function() {
     prepare()
     var name = 'wget'
     get(name)
@@ -50,9 +42,7 @@ const testWget = function() {
     var r = call(c)
     ensure(r.has('Wget'), r)
 }
-
-
-const testTree = function() {
+con testTree = function() {
     prepare()
     var name = 'tree'
     get(name)
@@ -61,9 +51,7 @@ const testTree = function() {
     var r = call(c)
     ensure(r.has('tree'), r)
 }
-
-
-const testPython = function() {
+con testPython = function() {
     prepare()
     var name = 'python@3.8'
     get(name)
@@ -72,8 +60,7 @@ const testPython = function() {
     var r = call(c)
     ensure(r.has('Python'), r)
 }
-
-const test7z = function() {
+con test7z = function() {
     prepare()
     var name = 'p7zip'
     get(name)
@@ -82,8 +69,7 @@ const test7z = function() {
     var r = call(c)
     ensure(r.has('7-Zip'), r)
 }
-
-const testPercol = function() {
+con testPercol = function() {
     prepare()
     var name = 'percol'
     get(name)
@@ -92,15 +78,12 @@ const testPercol = function() {
     var r = call(c)
     ensure(r.has('percol'), r)
 }
-
-const tests = function() {
+con tests = function() {
     testOpenssl()
     testWget()
     testTree()
     testPython()
     test7z()
     testPercol()
-    // testSearch()
 }
-
 tests()

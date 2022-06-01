@@ -1,107 +1,95 @@
-const importUtil = import("util")
-const importPath = import('path')
-const importConfig = import('config')
-
-const cPathBottleOutput = '/usr/local/axe/meta/.bottle.output'
-const cPackageInstalled = []
-
-const _axeBottleFromFile = function() {
-    var pathDir = importPath.pathMetaBin()
-    var pathJson = '{}/package_source_data/{}'.format(pathDir, 'formula_v2.json')
-    return importUtil.guaJsonFromFile(pathJson)
+con importUtil = import("util")
+con importPath = import('path')
+con importConfig = import('config')
+con cPathBottleOutput = '/usr/local/axe/meta/.bottle.output'
+con cPackageInstalled = []
+con isJson = importConfig.config.isJson
+con wirteLogFile = importUtil.wirteLogFile
+con axeBottleFromDb = function(type, name) {
+    return importUtil.guaSearchFromDb(type, name)
 }
-
-const cAxeBottleFromFile = _axeBottleFromFile()
-
-const axeBottleFromFile = function() {
-    var j = cAxeBottleFromFile
-    return j
-}
-
-const hasMacosBottle = function(bottle, mac) {
-    const files = bottle['bottle']['stable']['files']
-    const keys = files.keys()
+con hasMacosBottle = function(bottle, mac) {
+    con files = bottle['bottle']['stable']['files']
+    con keys = files.keys()
     return importUtil.guaArrayHas(keys, mac)
 }
-
-const search = function(name) {
-    const axeBottle = axeBottleFromFile()
-    const searchNames = []
-    const mac = macosName()
-
-    var keys = axeBottle.keys()
-    for(var i = 0; i < keys.length(); i+=1) {
-        var key = keys[i]
-        var itemName = key
-        var item = axeBottle[key]
-        const score = importUtil.guaStringMatchScore(name, itemName)
-
-        if (score <= 0) {
+con search = function(name) {
+    con type = 'bottle'
+    con mac = macosName()
+    var s = axeBottleFromDb(type, name)
+    var lines = s.split('\n')
+    var searchNames = []
+    for (i, e in lines) {
+        if (e == '') {
             continue
-        } else {
-            var j = json.loads(item)
-            if (not hasMacosBottle(j, mac)) {
-                continue
-            }
-            const version = versionFromBottle(j)
-            const _item = {
-                'name': itemName,
-                'version': version,
-                'token': itemName,
-                'score': score,
-            }
-            searchNames.add(_item)
         }
-	}
-
-    const sortedNames = importUtil.guaListSortByKey(searchNames, 'score', reverse=true)
-    return sortedNames
+        var line = e.split('|')
+        var itemName = line[0]
+        var item = json.loads(line[1])
+        if (not hasMacosBottle(item, mac)) {
+            continue
+        }
+        con version = versionFromBottle(item)
+        con _item = {
+            'name': itemName,
+            'version': version,
+            'token': itemName,
+            'installed': false,
+        }
+        searchNames.add(_item)
+    }
+    return searchNames
 }
-
-const tokenExist = function(token) {
-    const b = bottleFromName(token)
-    const e = b != null
+con tokenExist = function(token) {
+    con b = bottleFromName(token)
+    con e = b != null
     return e
 }
-
-const bottleFromName = function(name) {
-    const axeBottle = axeBottleFromFile()
-    const d = axeBottle
-    var keys = d.keys()
-    for(var i = 0; i < keys.length(); i+=1) {
-        var key = keys[i]
-        if (key.lower() == name.lower()) {
-            var item = d[key]
-            var j = json.loads(item)
-            return j
-        }
+con bottleFromName = function(name) {
+    var s = importUtil.guaItemFromDb('bottle',name)
+    if (s.length() > 0) {
+        var line = s.split('|')
+        var item = line[1]
+        return json.loads(item)
+    } else {
+        return null
     }
 }
-
-const versionFromBottle = function(bottle) {
-    const versions = bottle['versions']
-    const version = versions['stable']
+con versionFromBottle = function(bottle) {
+    con versions = bottle['versions']
+    con version = versions['stable']
     return version
 }
-
-const macosVersion = function() {
-    const c = 'sw_vers'
-    const content = importUtil.call(c)
-    const lines = content.split('\n')
+con macosVersion = function() {
+    con c = 'sw_vers'
+    con content = importUtil.call(c)
+    con lines = content.split('\n')
     for (var i = 0; i < lines.length(); i += 1) {
-        const line = lines[i]
+        con line = lines[i]
         if (line.startswith('ProductVersion')) {
-            const version = line.split('\t')[1]
+            con version = line.split('\t')[1]
             return version
         }
     }
     return null
 }
-
-const macosName = function() {
-    const version = macosVersion()
-
-    if (version.startswith('10.15')) {
+con macosCPUArch = function() {
+    con c = 'uname -m'
+    con content = importUtil.call(c)
+    con arch = content.strip()
+    return arch
+}
+con macosName = function() {
+    con version = macosVersion()
+    var prefix = ''
+    if (macosCPUArch() == 'arm64') {
+        prefix = 'arm64_'
+    }
+    if (version.startswith('12')) {
+        return prefix + 'monterey'
+    } else if (version.startswith('11')) {
+        return prefix + 'big_sur'
+    } else if (version.startswith('10.15')) {
         return 'catalina'
     } else if (version.startswith('10.14')) {
         return 'mojave'
@@ -111,7 +99,42 @@ const macosName = function() {
         return null
     }
 }
-
+con hasDownload = function(name, sha256) {
+    con p = importPath.pathBottleFileDownload(name)
+    con exist = importUtil.guaFileExist(p)
+    if (exist) {
+        con _sha256 = importUtil.guaFileSha256(p)
+        return sha256 == _sha256
+    } else {
+        return false
+    }
+}
+con dependenciesFromName = function(name) {
+    con bottle = bottleFromName(name)
+    con d = bottle['dependencies']
+    return d
+}
+con prepare = function() {
+    importUtil.guaFileMkdir(importPath.pathHome())
+    importUtil.guaFileMkdir(importPath.pathBottleDownload())
+    importUtil.guaFileMkdir(importPath.pathBottleLib())
+    importUtil.guaFileMkdir(importPath.pathBottleBin())
+    importUtil.guaFileMkdir(importPath.pathLib())
+    importUtil.guaFileMkdir(importPath.pathOpt())
+}
+con urlForBottle = function(name) {
+    con baseURL = 'https://mirrors.cloud.tencent.com/homebrew-bottles'
+    var fileInfo = fileInfoFromName(name)
+    var fullName = fileInfo.fullName
+    var version = fileInfo.versions.stable
+    var osName = macosName()
+    var rebuild = ''
+    if (fileInfo.rebuild > 0) {
+        rebuild = '{}.'.format(fileInfo.rebuild)
+    }
+    var url = '{}/{}-{}.{}.bottle.{}tar.gz'.format(baseURL, fullName, version, osName, rebuild)
+    return url
+}
 const fileInfoFromName = function(name) {
     const macOs = macosName()
     const item = bottleFromName(name)
@@ -123,47 +146,53 @@ const fileInfoFromName = function(name) {
         }
         return file
     } else {
-        const files = bottle['stable']['files']
-        const sha256 = files[macOs]['sha256']
         const mirrorConfig = importConfig.config.mirrorUrl()
-        const mirrorBrew = 'https://homebrew.bintray.com/bottles'
-        var url = files[macOs]['url']
-        url = url.replace(mirrorBrew, mirrorConfig)
-        const file = {
-            'url': url,
-            'sha256': sha256,
+        const files = bottle['stable']['files']
+        const bottleName = item['name']
+        var version = item['versions']['stable']
+        var revision = item['revision']
+        if (revision > 0) {
+            version = version + "_{}".format(revision)
         }
-        return file
+        var rebuild = bottle['stable']['rebuild']
+        if (files.has(macOs)) {
+            const sha256 = files[macOs]['sha256']
+            if (rebuild == 0) {
+                rebuild = '' 
+                var url = "{}/{}-{}.{}.bottle.tar.gz".format(mirrorConfig, bottleName, version, macOs)
+                const file = {
+                    'url': url,
+                    'sha256': sha256,
+                }
+                return file
+            }
+            var url = "{}/{}-{}.{}.bottle.{}.tar.gz".format(mirrorConfig, bottleName, version, macOs, rebuild)
+            const file = {
+                'url': url,
+                'sha256': sha256,
+            }
+            return file
+        } else {
+            const sha256 = files['all']['sha256']
+            if (rebuild == 0) {
+                rebuild = '' 
+                var url = "{}/{}-{}.all.bottle.tar.gz".format(mirrorConfig, bottleName, version, macOs)
+                const file = {
+                    'url': url,
+                    'sha256': sha256,
+                }
+                return file
+            }
+            var url = "{}/{}-{}.all.bottle.{}.tar.gz".format(mirrorConfig, bottleName, version, rebuild)
+            const file = {
+                'url': url,
+                'sha256': sha256,
+            }
+            return file
+        }
     }
 }
-
-const hasDownload = function(name, sha256) {
-    const p = importPath.pathBottleFileDownload(name)
-    const exist = importUtil.guaFileExist(p)
-    if (exist) {
-        const _sha256 = importUtil.guaFileSha256(p)
-        return sha256 == _sha256
-    } else {
-        return false
-    }
-}
-
-const dependenciesFromName = function(name) {
-    const bottle = bottleFromName(name)
-    const d = bottle['dependencies']
-    return d
-}
-
-const prepare = function() {
-    importUtil.guaFileMkdir(importPath.pathHome())
-    importUtil.guaFileMkdir(importPath.pathBottleDownload())
-    importUtil.guaFileMkdir(importPath.pathBottleLib())
-    importUtil.guaFileMkdir(importPath.pathBottleBin())
-    importUtil.guaFileMkdir(importPath.pathLib())
-    importUtil.guaFileMkdir(importPath.pathOpt())
-}
-
-const download = function(name, retryTimes=5) {
+con download = function(name, retryTimes=5) {
     const fileInfo = fileInfoFromName(name)
     var url = fileInfo['url']
     const sha256 = fileInfo['sha256']
@@ -171,47 +200,42 @@ const download = function(name, retryTimes=5) {
     const _times = retryTimes
     if (not h) {
         const f = importPath.pathBottleFileDownload(name)
-
         while (retryTimes > 0) {
-            log('downloading {} from {}'.format(name, url))
             const c = 'curl --location "{}" > "{}"'.format(url, f)
             importUtil.callWithoutOutput(c)
             const _sha256 = importUtil.guaFileSha256(f)
             if (_sha256 != sha256) {
-                log('sha256 check failed {} {} {}'.format(name, sha256, _sha256))
                 url = importConfig.config.switchedMirrorUrl(url)
                 retryTimes -= 1
             } else {
                 return true
             }
         }
-        log('download failed {} with retry {} times'.format(name, _times))
         return false
     } else {
         return true
     }
 }
-
-const tar = function(name) {
-    const d = importPath.pathBottlePackage(name)
+con tar = function(name) {
+    con d = importPath.pathBottlePackage(name)
+    con clear = 'rm -rf {}'.format(d)
+    importUtil.call(clear)
     importUtil.guaFileMkdir(d)
-    const f = importPath.pathBottleFileDownload(name)
-    const c = 'tar xf "{}" -C "{}" --strip-components=1'.format(f, d)
+    con f = importPath.pathBottleFileDownload(name)
+    con c = 'tar xf "{}" -C "{}" --strip-components=1'.format(f, d)
     importUtil.callWithoutOutput(c)
     importUtil.guaFilePermissionWriteAdd(d)
 }
-
-const _pathForFrameworks = function(paths) {
-    // 特殊处理 python 这种 bin/lib 文件都在 Frameworks 文件夹的文件
-    const f = 'Frameworks'
-    const lenPaths = paths.length()
+con _pathForFrameworks = function(paths) {
+    con f = 'Frameworks'
+    con lenPaths = paths.length()
     if (lenPaths == 0) {
         return null
     } else {
-        const firstPath = paths[0]
+        con firstPath = paths[0]
         var i = 0
         while (i < lenPaths) {
-            const path = paths[i]
+            con path = paths[i]
             if (path.has(f)) {
                 return path
             }
@@ -220,101 +244,92 @@ const _pathForFrameworks = function(paths) {
         return firstPath
     }
 }
-
-const pathLibOfPackage = function(packageName) {
-    const path = importPath.pathBottlePackage(packageName)
-    const dirName = 'lib'
-    const libs = importUtil.guaFileDirectoriesByName(path, dirName)
+con pathLibOfPackage = function(packageName) {
+    con path = importPath.pathBottlePackage(packageName)
+    con dirName = 'lib'
+    con libs = importUtil.guaFileDirectoriesByName(path, dirName)
     return _pathForFrameworks(libs)
 }
-
-const pathExeOfPackage = function(packageName) {
-    const path = importPath.pathBottlePackage(packageName)
-    const dirName = 'bin'
-    const libs = importUtil.guaFileDirectoriesByName(path, dirName)
+con pathExeOfPackage = function(packageName) {
+    con path = importPath.pathBottlePackage(packageName)
+    con dirName = 'bin'
+    con libs = importUtil.guaFileDirectoriesByName(path, dirName)
     return _pathForFrameworks(libs)
 }
-
-const fix7z = function(filePath) {
-    const isShell = importUtil.guaFileIsScript(filePath)
+con fix7z = function(filePath) {
+    con isShell = importUtil.guaFileIsScript(filePath)
     if (isShell) {
-        const content = stringFromFile(filePath)
-        const lines = content.split('\n')
-        const brewCellar = '@@HOMEBREW_CELLAR@@'
-        const brewPrefixOpt = '@@HOMEBREW_PREFIX@@/opt'
-        const brewPrefix = '@@HOMEBREW_PREFIX@@'
+        con content = stringFromFile(filePath)
+        con lines = content.split('\n')
+        con brewCellar = '@@HOMEBREW_CELLAR@@'
+        con brewPrefixOpt = '@@HOMEBREW_PREFIX@@/opt'
+        con brewPrefix = '@@HOMEBREW_PREFIX@@'
         var i = 0
-        const l = lines.length()
+        con l = lines.length()
         var newLines = []
         while (i < l) {
-            const line = lines[i]
+            con line = lines[i]
             if (line.has(brewCellar)) {
-                const newLine = line.replace(brewCellar, importPath.pathBottleLib())
+                con newLine = line.replace(brewCellar, importPath.pathBottleLib())
                 newLines.add(newLine)
             } else if (line.has(brewPrefixOpt)) {
-                const newLine = line.replace(brewPrefixOpt, importPath.pathOpt())
+                con newLine = line.replace(brewPrefixOpt, importPath.pathOpt())
                 newLines.add(newLine)
             } else if (line.has(brewPrefix)) {
-                const newLine = line.replace(brewPrefix, importPath.pathBottleLib())
+                con newLine = line.replace(brewPrefix, importPath.pathBottleLib())
                 newLines.add(newLine)
             } else {
                 newLines.add(line)
             }
             i += 1
         }
-        const newContent = newLines.join('\n')
+        con newContent = newLines.join('\n')
         newContent.writeToFile(filePath)
     }
 }
-
-const allExeFilesOfPackage = function(packageName) {
-    const path = importPath.pathBottlePackage(packageName)
-    const files = importUtil.guaFileAllExeInDirectory(path)
+con allExeFilesOfPackage = function(packageName) {
+    con path = importPath.pathBottlePackage(packageName)
+    con files = importUtil.guaFileAllExeInDirectory(path)
     return files
 }
-
-const pathDylibAbsolute = function(pathDylibInPackage) {
+con pathDylibAbsolute = function(pathDylibInPackage) {
     if (pathDylibInPackage.startswith('opt/')) {
         pathDylibInPackage = pathDylibInPackage.cut(4)
     }
     var split = pathDylibInPackage.split('/')
-    const namePackage = split[0]
-    const nameDylib = split[-1]
-    const _path = '{}/{}'.format(importPath.pathBottleLib(), pathDylibInPackage)
+    con namePackage = split[0]
+    con nameDylib = split[-1]
+    con _path = '{}/{}'.format(importPath.pathBottleLib(), pathDylibInPackage)
     if (importUtil.guaFileExist(_path)) {
         return _path
     } else {
-        // 似乎有部分安装包的路径不是标准路径
-        // 找出这部分安装包...
-        const pathPackageLib = pathLibOfPackage(namePackage)
-        const pathDylib = '{}/{}'.format(pathPackageLib, nameDylib)
+        con pathPackageLib = pathLibOfPackage(namePackage)
+        con pathDylib = '{}/{}'.format(pathPackageLib, nameDylib)
         return pathDylib
     }
 }
-
-const parsedBottle = function() {
+con parsedBottle = function() {
     var commands = []
-    const content = stringFromFile(cPathBottleOutput)
+    con content = stringFromFile(cPathBottleOutput)
     var lines = content.split('\n')
     var i = 0
-    const l = lines.length()
+    con l = lines.length()
     while (i < l) {
-        const line = lines[i]
+        con line = lines[i]
         i += 1
         if (line.length() == 0) {
             break
         }
-
         if (line.startswith("Load command")) {
-            const cmd = lines[i].strip('\n').strip(' ').split(' ')[-1]
+            con cmd = lines[i].strip('\n').strip(' ').split(' ')[-1]
             i += 1
             if (cmd == "LC_ID_DYLIB" or cmd == "LC_LOAD_DYLIB") {
                 i += 1
-                const newLine = lines[i].strip('\n').strip(' ')
+                con newLine = lines[i].strip('\n').strip(' ')
                 i += 1
-                const name = newLine.split(' ')[1]
+                con name = newLine.split(' ')[1]
                 if (name.has('@@')) {
-                    const _c = {
+                    con _c = {
                         'cmd': cmd,
                         'name': name,
                     }
@@ -325,29 +340,31 @@ const parsedBottle = function() {
     }
     return commands
 }
-
-const otoolDylib = function(pathDylib) {
-    const c = 'otool -l "{}" > "{}"'.format(pathDylib, cPathBottleOutput)
+con otoolDylib = function(pathDylib) {
+    con c = 'otool -l "{}" > "{}"'.format(pathDylib, cPathBottleOutput)
     importUtil.callWithoutOutput(c)
     return parsedBottle()
 }
-
-const otoolExe = function(pathExe) {
-    const c = 'otool -L "{}"'.format(pathExe)
+con otoolExe = function(pathExe) {
+    con c = 'otool -L "{}"'.format(pathExe)
     if (not pathExe.startswith('/usr/local/axe')) {
-        log('???', pathExe)
+        if (isJson) {
+            wirteLogFile('{} not exist'.format(pathExe))
+        } else {
+            log('???', pathExe)
+        }
     }
-    const r = importUtil.call(c)
-    const lines = r.split('\n')
+    con r = importUtil.call(c)
+    con lines = r.split('\n')
     var dylibs = []
     var i = 0
-    const l = lines.length()
+    con l = lines.length()
     while (i < l) {
-        const line = lines[i]
+        con line = lines[i]
         if (line.has('@@/')) {
-            const name = line.strip(' ').split(' (')[0]
-            const pathDylib = line.split('@@/')[1].split(' (')[0]
-            const dylib = {
+            con name = line.strip(' ').split(' (')[0]
+            con pathDylib = line.split('@@/')[1].split(' (')[0]
+            con dylib = {
                 'name': name,
                 'path': pathDylib,
             }
@@ -357,57 +374,61 @@ const otoolExe = function(pathExe) {
     }
     return dylibs
 }
-
-const modifyDylibId = function(newName, path) {
-    const c = 'install_name_tool -id {} "{}"'.format(newName, path)
+con modifyDylibId = function(newName, path) {
+    con c = 'install_name_tool -id {} "{}"'.format(newName, path)
     importUtil.call(c)
 }
-
-const modifyDylibLoad = function(oldName, newName, pathFile) {
-    const c = 'install_name_tool -change {} {} "{}"'.format(oldName, newName, pathFile)
+con modifyDylibLoad = function(oldName, newName, pathFile) {
+    con c = 'install_name_tool -change {} {} "{}"'.format(oldName, newName, pathFile)
     importUtil.call(c)
 }
-
-const modifyExe = function(name, pathLib, pathExe) {
-    const c = 'install_name_tool -change {} {} "{}"'.format(name, pathLib, pathExe)
+con modifyExe = function(name, pathLib, pathExe) {
+    con c = 'install_name_tool -change {} {} "{}"'.format(name, pathLib, pathExe)
     importUtil.call(c)
 }
-
-const hackBottleDylib = function(pathDylibInPackage) {
-    const pathFile = pathDylibInPackage
-    const itemsReplace = otoolDylib(pathFile)
+con modifyRpath = function(pathExe) {
+    con fileType = importUtil.guaFileType(pathExe)
+    if (fileType.has('Mach-O 64-bit executable x86_64')) {
+        con pathLib = importPath.pathLib()
+        con c = 'install_name_tool -add_rpath {} "{}"'.format(pathLib, pathExe)
+        importUtil.call(c)
+    }
+}
+con hackBottleDylib = function(pathDylibInPackage) {
+    con pathFile = pathDylibInPackage
+    con itemsReplace = otoolDylib(pathFile)
     var i = 0
-    const l = itemsReplace.length()
+    con l = itemsReplace.length()
     while (i < l) {
-        const item = itemsReplace[i]
-        const cmd = item['cmd']
-        const name = item['name']
-        const pathUseless = name.split('@@/')[1]
-        const pathDylib = pathDylibAbsolute(pathUseless)
+        con item = itemsReplace[i]
+        con cmd = item['cmd']
+        con name = item['name']
+        con pathUseless = name.split('@@/')[1]
+        con pathDylib = pathDylibAbsolute(pathUseless)
         if (cmd == 'LC_ID_DYLIB') {
-            // '@@HOMEBREW_PREFIX@@/opt/openssl@1.1/lib/libssl.1.1.dylib'
             modifyDylibId(pathDylib, pathFile)
         } else if (cmd == 'LC_LOAD_DYLIB') {
-            // '@@HOMEBREW_CELLAR@@/openssl@1.1/1.1.1g/lib/libcrypto.1.1.dylib'
             modifyDylibLoad(name, pathDylib, pathFile)
         } else {
-            log('brew bottle error {}'.format(name))
+            if (isJson) {
+                wirteLogFile('brew bottle error {}'.format(name))
+            }  else {
+                log('brew bottle error {}'.format(name))
+            }
         }
         i += 1
     }
 }
-
-const hackBottleDylibs = function(packageName) {
-    const p = pathLibOfPackage(packageName)
+con hackBottleDylibs = function(packageName) {
+    con p = pathLibOfPackage(packageName)
     if (p == null) {
-        // 没有 lib 文件夹
         return
     }
-    const allFiles = importUtil.guaFilesInDirectory(p, needDirectory=false)
+    con allFiles = importUtil.guaFilesInDirectory(p, false)
     var i = 0
-    const l = allFiles.length()
+    con l = allFiles.length()
     while (i < l) {
-        const file = allFiles[i]
+        con file = allFiles[i]
         if (file.endswith('dylib')) {
             hackBottleDylib(file)
         }
@@ -417,43 +438,37 @@ const hackBottleDylibs = function(packageName) {
         linkToLib(p)
     }
 }
-
-const linkToLib = function(packageLibPath) {
-    const files = importUtil.guaFilesInDirectory(packageLibPath)
-    const pathLib = importPath.pathLib()
+con linkToLib = function(packageLibPath) {
+    con files = importUtil.guaFilesInDirectory(packageLibPath)
+    con pathLib = importPath.pathLib()
     var i = 0
-    const l = files.length()
+    con l = files.length()
     while (i < l) {
-        const file = files[i]
+        con file = files[i]
         importUtil.guaFileSymbolicLink(file, pathLib)
         i += 1
     }
 }
-
-const linkToBin = function(pathExe) {
-    const pathBin = importPath.pathBottleBin()
+con linkToBin = function(pathExe) {
+    con pathBin = importPath.pathBottleBin()
     return importUtil.guaFileSymbolicLink(pathExe, pathBin)
 }
-
-const handleLibexec = function(packageName) {
-    // 处理像 node/py/ruby 这些有内部依赖库 node_modules/pip/gem
-    // 1. 软链接 libexec/bin 文件到 /usr/local/axe/bin
-    // 2. 复制 libexec/lib 目录到 /usr/local/axe/lib
-    const pathPackage = importPath.pathBottlePackage(packageName)
+con handleLibexec = function(packageName) {
+    con pathPackage = importPath.pathBottlePackage(packageName)
     var pathLibexec = importUtil.guaFileDirectoriesByName(pathPackage, 'libexec')
     if (pathLibexec.length() == 0) {
         return
     } else {
         pathLibexec = pathLibexec[0]
-        if (importUtil.guaFileExist(pathLibexec, isDirectory=true)) {
-            const pathBin = '{}/{}'.format(pathLibexec, 'bin')
-            const pathLib = '{}/{}'.format(pathLibexec, 'lib')
-            if (importUtil.guaFileExist(pathBin, isDirectory=true)) {
-                const files = importUtil.guaFilesInDirectory(pathBin, needDirectory=false)
-                const l = files.length()
+        if (importUtil.guaFileExist(pathLibexec, true)) {
+            con pathBin = '{}/{}'.format(pathLibexec, 'bin')
+            con pathLib = '{}/{}'.format(pathLibexec, 'lib')
+            if (importUtil.guaFileExist(pathBin, true)) {
+                con files = importUtil.guaFilesInDirectory(pathBin, false)
+                con l = files.length()
                 var i = 0
                 while (i < l) {
-                    const file = files[i]
+                    con file = files[i]
                     if (importUtil.guaFileIsExecutable(file)) {
                         fix7z(file)
                     }
@@ -461,13 +476,14 @@ const handleLibexec = function(packageName) {
                     i += 1
                 }
             }
-            if (importUtil.guaFileExist(pathLib, isDirectory=true)) {
-                const dirs = importUtil.guaFilesInDirectory(pathLib, needFile=false)
-                const l = dirs.length()
+            if (importUtil.guaFileExist(pathLib, true)) {
+                con dirs = importUtil.guaFilesInDirectory(pathLib, true, false)
+                con l = dirs.length()
                 var i = 0
                 while (i < l) {
-                    const dir = dirs[i]
-                    importUtil.guaFileCp(dir, importPath.pathLib())
+                    con dir = dirs[i]
+                    var c = 'cp -a -r "{}" "{}"'.format(dir, importPath.pathLib())
+                    var r = importUtil.callWithoutOutput(c)
                     i += 1
                 }
             }
@@ -477,80 +493,74 @@ const handleLibexec = function(packageName) {
         }
     }
 }
-
-const hackBottleExes = function(packageName) {
-    const exeFiles = allExeFilesOfPackage(packageName)
+con hackBottleExes = function(packageName) {
+    con exeFiles = allExeFilesOfPackage(packageName)
     for (var i=0; i < exeFiles.length(); i+=1) {
-        const pathExe = exeFiles[i]
-        const dylibs = otoolExe(pathExe)
+        con pathExe = exeFiles[i]
+        con dylibs = otoolExe(pathExe)
         for (var j = 0; j < dylibs.length(); j+=1) {
-            const dylib = dylibs[j]
-            const path = dylib['path']
-            const name = dylib['name']
-            const pathDylib = pathDylibAbsolute(path)
+            con dylib = dylibs[j]
+            con path = dylib['path']
+            con name = dylib['name']
+            con pathDylib = pathDylibAbsolute(path)
             modifyExe(name, pathDylib, pathExe)
         }
+        modifyRpath(pathExe)
     }
 }
-
-const slBottleExes = function(packageName) {
-    // 移动可执行文件到 bin 文件夹
+con slBottleExes = function(packageName) {
     var p = pathExeOfPackage(packageName)
     if (p == null) {
-        // 有些软件没有 bin 文件夹
         p = importPath.pathBottlePackage(packageName)
     }
-    const files = importUtil.guaFilesInDirectory(p, needDirectory=false)
+    con files = importUtil.guaFilesInDirectory(p, false)
     for (var i = 0; i < files.length(); i+=1) {
-        const file = files[i]
-        const e = importUtil.guaFileIsExecutable(file)
+        con file = files[i]
+        con e = importUtil.guaFileIsExecutable(file)
         if (e) {
             fix7z(file)
             linkToBin(file)
         }
     }
 }
-
-const slOpt = function(packageName) {
-    const pathLib = importPath.pathBottlePackage(packageName)
-    const dirPackage = importUtil.guaFilesInDirectory(pathLib, needFile=false)
+con slOpt = function(packageName) {
+    con pathLib = importPath.pathBottlePackage(packageName)
+    con dirPackage = importUtil.guaFilesInDirectory(pathLib, true, false)
     if (dirPackage.length() == 0) {
         return
     }
-    const pathVersion = dirPackage[0]
-    const pathOpt = importPath.pathOptPackage(packageName)
+    con pathVersion = dirPackage[0]
+    con pathOpt = importPath.pathOptPackage(packageName)
     importUtil.guaFileSymbolicLink(pathVersion, pathOpt)
 }
-
-const hackBottle = function(name) {
+con hackBottle = function(name) {
     hackBottleDylibs(name)
     hackBottleExes(name)
     handleLibexec(name)
     slBottleExes(name)
     slOpt(name)
 }
-
-const get = function(name) {
+con getApp = function(name) {
     if (importUtil.guaArrayHas(cPackageInstalled, name)) {
-        log('{} already installed'.format(name))
         return true
     } else {
-        log('get {}'.format(name))
     }
-
-    const downloadSuccess = download(name)
+    con downloadSuccess = download(name)
     if (not downloadSuccess) {
-        log("download failed {}".format(name))
+        if (isJson) {
+            wirteLogFile("download failed {}".format(name))
+        } else {
+            log("download failed {}".format(name))
+        }
         return false
     }
-
     cPackageInstalled.add(name)
     tar(name)
-    const deps = dependenciesFromName(name)
+    con deps = dependenciesFromName(name)
     for (var i = 0; i < deps.length(); i+=1) {
-        const dep = deps[i]
-        const _name = dep
-        const r = get(_name)
+        con dep = deps[i]
+        con _name = dep
+        con r = getApp(_name)
         if (not r) {
             return false
         } 

@@ -1,30 +1,35 @@
-const readFile = function(path_file) {
+con importPath = import('path')
+con importConfig = import('config')
+con readFile = function(path_file) {
     var c = 'cat "{}"'.format(path_file)
     var result = call(c)
     return result
 }
-
-const guaListGetReverse = function(list, i) {
+con guaListGetReverse = function(list, i) {
     var l = list.length()
     var index = l + i
     var e = list[index]
     return e
 }
-
-const guaListSortByKey = function(list, key, reverse=false) {
-    // 这里使用了最简单的排序, O(N*N)
-    const newList = []
-
-    // 先复制一份数据
+con guaListIn = function(list, e) {
     for (var i = 0; i < list.length(); i += 1) {
-        const v = list[i]
+        con l = list[i]
+        if (l == e) {
+            return true
+        }
+    }
+    return false
+}
+con guaListSortByKey = function(list, key, reverse=false) {
+    con newList = []
+    for (var i = 0; i < list.length(); i += 1) {
+        con v = list[i]
         newList.add(v)
     }
-
-    const n = newList.length()
+    con n = newList.length()
     for (var i = 1; i < n; i += 1) {
-        const v = newList[i]
-        const valueOfKey = v[key]
+        con v = newList[i]
+        con valueOfKey = v[key]
         var j = i
         if (reverse) {
             while (i > 0 and newList[i-1][key] < valueOfKey) {
@@ -39,23 +44,18 @@ const guaListSortByKey = function(list, key, reverse=false) {
         }
         newList[i] = v
     }
-
-
     return newList
 }
-
-const guaStringIn = function(str, subStr) {
+con guaStringIn = function(str, subStr) {
     var index = str.find(subStr)
     return index != -1
 }
-
-const guaStringToInt = function(str) {
-    const s = str
+con guaStringToInt = function(str) {
+    con s = str
     var i = 0
     var n = 0
     while (i < s.length()) {
         var integer = '0123456789'.find(s[i])
-        // 不是 int
         if (integer < 0) {
             return null
         }
@@ -64,16 +64,14 @@ const guaStringToInt = function(str) {
     }
     return n
 }
-
-const guaStringMultiply = function(str, num) {
+con guaStringMultiply = function(str, num) {
     var newStr = ''
     for (var i = 0; i < num; i += 1) {
         newStr += str
     }
     return newStr
 }
-
-const guaStringLower = function(str) {
+con guaStringLower = function(str) {
     var alpha = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     var newStr = ''
     var i = 0
@@ -95,8 +93,7 @@ const guaStringLower = function(str) {
     }
     return newStr
 }
-
-const guaStringFindReverse = function(str, subStr) {
+con guaStringFindReverse = function(str, subStr) {
     var index = 0
     var skipedLen = 0
     var found = false
@@ -117,8 +114,7 @@ const guaStringFindReverse = function(str, subStr) {
         return -1
     }
 }
-
-const guaStringStrip = function(str) {
+con guaStringStrip = function(str) {
     var i = 0
     var l = str.length()
     var start = 0
@@ -131,7 +127,6 @@ const guaStringStrip = function(str) {
             start = i
         }
     }
-
     l = str.length()
     var end = l
     while (l > 1) {
@@ -150,8 +145,7 @@ const guaStringStrip = function(str) {
         return striped
     }
 }
-
-const guaStringEndwith = function(str, subStr) {
+con guaStringEndwith = function(str, subStr) {
     var l1 = str.length()
     var l2 = subStr.length()
     var start = l1 - l2
@@ -160,8 +154,7 @@ const guaStringEndwith = function(str, subStr) {
     var e = s == subStr
     return e
 }
-
-const guaStringStartwith = function(str, subStr) {
+con guaStringStartwith = function(str, subStr) {
     var l1 = str.length()
     var l2 = subStr.length()
     var start = 0
@@ -170,10 +163,9 @@ const guaStringStartwith = function(str, subStr) {
     var e = s == subStr
     return e
 }
-
-const guaStringMatchScore = function(searchedStr, originalStr) {
-    const l1 = searchedStr.lower()
-    const l2 = originalStr.lower()
+con guaStringMatchScore = function(searchedStr, originalStr) {
+    con l1 = searchedStr.lower()
+    con l2 = originalStr.lower()
     if (searchedStr == originalStr) {
         return 100
     } else if (l1 == l2) {
@@ -186,25 +178,23 @@ const guaStringMatchScore = function(searchedStr, originalStr) {
         return 0
     }
 }
-
-const guaStringJoin = function(s, list) {
-    const l = list.length()
+con guaStringJoin = function(s, list) {
+    con l = list.length()
     if (l == 0) {
         return ''
     } else {
         var i = 1
         var str = list[0]
         while (i < l) {
-            const e = list[i]
-            const f = '{}{}'.format(s, e)
+            con e = list[i]
+            con f = '{}{}'.format(s, e)
             str += f
             i += 1
         }
         return str
     }   
 }
-
-const guaFilesInDirectory = function(path, needDirectory=true, needFile=true) {
+con guaFilesInDirectory = function(path, needDirectory=true, needFile=true) {
     var c = 'ls "{}"'.format(path)
     var r = call(c)
     if (r == null or r == '') {
@@ -234,46 +224,40 @@ const guaFilesInDirectory = function(path, needDirectory=true, needFile=true) {
     }
     return files
 }
-
-const guaFileType = function(filePath) {
+con guaFileType = function(filePath) {
     var c = 'file "{}"'.format(filePath)
     var r = call(c)
+    r = r.cut(filePath.length())
     return r
 }
-
-const guaFileSha256 = function(path) {
-    const c = 'shasum -a 256 "{}"'.format(path)
-    const r = call(c)
-    const _sha256 = r.strip(' ').split(' ')[0]
+con guaFileSha256 = function(path) {
+    con c = 'shasum -a 256 "{}"'.format(path)
+    con r = call(c)
+    con _sha256 = r.strip(' ').split(' ')[0]
     return _sha256
 }
-
-const guaFilePermissionWriteAdd = function(path) {
-    // todo 这里要测试和之前逻辑是否一致
-    const c = 'chmod -R +w {}'.format(path)
+con guaFilePermissionWriteAdd = function(path) {
+    con c = 'chmod -R +w {}'.format(path)
     return call(c)
 }
-
-const guaFileIsDirectory = function(path) {
+con guaFileIsDirectory = function(path) {
     var typeStr = guaFileType(path)
     var d = 'directory\n'
     var i = guaStringEndwith(typeStr, d)
     return i
 }
-
-const guaFileIsScript = function(path) {
-    const r = guaFileType(path)
-    const scriptStr = 'script'
-    const i = r.has(scriptStr)
+con guaFileIsScript = function(path) {
+    con r = guaFileType(path)
+    con scriptStr = 'script'
+    con i = r.has(scriptStr)
     return i
 }
-
-const guaFileIsExecutable = function(path) {
+con guaFileIsExecutable = function(path) {
     if (guaFileIsDirectory(path)) {
         return false
     }
-    const c = 'find "{}" -perm +111'.format(path)
-    const r = call(c)
+    con c = 'find "{}" -perm +111'.format(path)
+    con r = call(c)
     if (r == null) {
         return false
     } else {
@@ -284,42 +268,50 @@ const guaFileIsExecutable = function(path) {
         }
     }
 }
-
-const guaFileExist = function(path, isDirectory=false) {
+con guaFileExist = function(path, isDirectory=false) {
     if (isDirectory) {
         return guaFileIsDirectory(path)
     } else {
-        const typeStr = guaFileType(path)
-        const d = '(No such file or directory)\n'
-        const notExist = typeStr.endswith(d)
-        const exist = not notExist
+        con typeStr = guaFileType(path)
+        con d = '(No such file or directory)\n'
+        con notExist = typeStr.endswith(d)
+        con exist = not notExist
         return exist
     }
 }
-
-const guaFileDirectoriesByName = function(basePath, directoryName) {
-    const c = 'find {} -type d -name "{}"'.format(basePath, directoryName)
-    const r = call(c)
+con guaFileDirectoriesByName = function(basePath, directoryName) {
+    con c = 'find {} -type d -name "{}"'.format(basePath, directoryName)
+    con r = call(c)
     if (r == null or r == '') {
         return []
     } else {
-        const newR = r.strip('\n')
-        const dirs = newR.split('\n')
+        con newR = r.strip('\n')
+        con dirs = newR.split('\n')
         return dirs
     }
 }
-
-const guaFileAllExeInDirectory = function(path) {
-    const c = 'find "{}" -type f -perm +111'.format(path)
-    const r = call(c)
+con guaFindSuffixInDirectory = function(basePath, suffix) {
+    con c = 'find {} -name "*{}"'.format(basePath, suffix)
+    con r = call(c)
     if (r == null or r == '') {
         return []
     } else {
-        const newR = r.strip('\n')
-        const files = newR.split('\n')
-        const newFiles = []
+        con newR = r.strip('\n')
+        con dirs = newR.split('\n')
+        return dirs
+    }
+}
+con guaFileAllExeInDirectory = function(path) {
+    con c = 'find "{}" -type f -perm +111'.format(path)
+    con r = call(c)
+    if (r == null or r == '') {
+        return []
+    } else {
+        con newR = r.strip('\n')
+        con files = newR.split('\n')
+        con newFiles = []
         for (var i = 0; i < files.length(); i += 1) {
-            const file = files[i]
+            con file = files[i]
             if (file.endswith('dll') or file.endswith('exe')) {
                 continue
             }
@@ -328,82 +320,74 @@ const guaFileAllExeInDirectory = function(path) {
         return newFiles
     }
 }
-
-const guaFileMkdir = function(path) {
-    const e = guaFileExist(path)
+con guaFileMkdir = function(path) {
+    con e = guaFileExist(path)
     if (not e) {
-        const c = 'mkdir -p "{}"'.format(path)
+        con c = 'mkdir -p "{}"'.format(path)
         return callWithoutOutput(c)
     } else {
         return true
     }
 }
-
-const guaFileCp = function(source, dest) {
+con guaFileCp = function(source, dest) {
     var c = 'cp -r "{}" "{}"'.format(source, dest)
     var r = callWithoutOutput(c)
     return r
 }
-
-const guaFileMv = function(source, dest) {
+con guaFileMv = function(source, dest) {
     var c = 'mv "{}" "{}"'.format(source, dest)
     var r = callWithoutOutput(c)
     return r
 }
-
-const guaFileRm = function(source) {
-    const c = 'rm -rf "{}"'.format(source)
+con guaFileRm = function(source) {
+    con c = 'rm -rf "{}"'.format(source)
     var r = callWithoutOutput(c)
     return r
 }
-
-const guaFileSymbolicLink = function(source, dest) {
-    const c = 'ln -sf "{}" "{}"'.format(source, dest)
-    const r = callWithoutOutput(c)
+con guaFileSymbolicLink = function(source, dest, needLog=false) {
+    con c = 'ln -sf "{}" "{}"'.format(source, dest)
+    if (needLog) {
+        log(c)
+    }
+    con r = callWithoutOutput(c)
     return r
 }
-
-const guaCharIsAlpha = function(char) {
+con guaCharIsAlpha = function(char) {
     var alpha = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    var in = guaStringIn(alpha, char)
-    return in
+    var _in = guaStringIn(alpha, char)
+    return _in
 }
-
-const guaArrayHas = function(array, element) {
+con guaArrayHas = function(array, element) {
     for (var i = 0; i < array.length(); i+=1) {
-        const e = array[i]
+        con e = array[i]
         if (e == element) {
             return true
         }
     }
     return false
 }
-
-const guaUuid = function() {
-    const c = 'uuidgen'
-    var result = os.systemWithOutput(c)
+con guaUuid = function() {
+    con c = 'uuidgen'
+    var result = os.exec(c)
+    result = result.output
     result = result.cut(0, result.length() - 1)
     return result
 }
-
-const guaJsonFromFile = function(file) {
+con guaJsonFromFile = function(file) {
     var s = stringFromFile(file)
     var j = json.loads(s)
     return j
 }
-
-const guaTimestamp = function() {
-    const c = 'date +%s'
+con guaTimestamp = function() {
+    con c = 'date +%s'
     var _t = call(c)
     _t = _t.cut(0, _t.length() - 1)
-    const t = guaStringToInt(_t)
+    con t = guaStringToInt(_t)
     return t
 }
-
-const _generatedUuid = guaUuid()
-
-const call = function(c) {
-    const fileName = '.gualang_{}.output'.format(_generatedUuid)
+con _generatedUuid = guaUuid()
+con call = function(c) {
+    con fileName = '.gualang_{}.output'.format(_generatedUuid)
     var outputTmpFile = '/usr/local/axe/meta/{}'.format(fileName)
     var newCommand = '{} > {}'.format(c, outputTmpFile)
     var result = os.system(newCommand)
@@ -411,34 +395,39 @@ const call = function(c) {
         var r = stringFromFile(outputTmpFile)
         return r
     } else {
-        log('call failed <{}>'.format(newCommand))
-        return null
+        con isJson = importConfig.config.isJson
+        if (isJson) {
+            con s = 'call failed <{}>'.format(newCommand)
+            wirteLogFile(s)            
+        } else {
+            log('call failed <{}>'.format(newCommand))
+            return null
+        }
     }
 }
-
-const callWithoutOutput = function(c) {
+con callWithoutOutput = function(c) {
     var result = os.system(c)
     if (result == 0) {
         return true
     } else {
-        log('call failed <{}>'.format(c))
-        return false
+        con isJson = importConfig.config.isJson
+        if (isJson) {
+            con s = 'call failed <{}>'.format(c)
+            wirteLogFile(s)  
+        } else {
+            log('call failed <{}>'.format(c))
+            return false
+        }
     }
 }
-
-const cleanTmpFiles = function() {
-    // 如果文件不存在
-    // 则删除
-    // 如果存在
-    // 则比较
-    // 删除成功最后更新时间
+con cleanTmpFiles = function() {
     var needClean = false
-    const timestampFile = '/usr/local/axe/meta/{}'.format('.clean.timestamp')
-    const now = guaTimestamp()
+    con timestampFile = '/usr/local/axe/meta/{}'.format('.clean.timestamp')
+    con now = guaTimestamp()
     if (guaFileExist(timestampFile)) {
-        const valueStr = stringFromFile(timestampFile)
-        const value = guaStringToInt(valueStr)
-        const diff = now - value
+        con valueStr = stringFromFile(timestampFile)
+        con value = guaStringToInt(valueStr)
+        con diff = now - value
         if (diff > 3600) {
             needClean = true
         } else {
@@ -447,19 +436,107 @@ const cleanTmpFiles = function() {
     } else {
         needClean = true
     }
-
     if (needClean) {
-        const pattern = '.gualang*'
+        con pattern = '.gualang*'
         var outputTmpFiles = '/usr/local/axe/meta/{}'.format(pattern)
-        const c = 'rm -rf {}'.format(outputTmpFiles)
+        con c = 'rm -rf {}'.format(outputTmpFiles)
         callWithoutOutput(c)
-        const nowStr = '{}'.format(now)
+        con nowStr = '{}'.format(now)
         nowStr.writeToFile(timestampFile)
     }
 }
-
-const ensure = function(condition, message) {
+con ensure = function(condition, message) {
     if (not condition) {
         log('*** 测试失败:', message)
     }
+}
+con input = function() {
+    var str = os.exec('read input && echo $input').output.split('\n')[0]
+    return str.strip('')
+}
+con isArray = function(o) {
+    return type(o) == type([])
+}
+con outputForJson = function(action, status, data, message="") {
+    return {
+        action: action,
+        status: status,
+        data: data,
+        message: message,
+    }
+}
+con time = function() {
+    con d = os.date()
+    con t = '[{}-{}-{} {}:{}:{}]'.format(d.year, d.month, d.day, d.hour, d.min, d.sec)
+    return t
+}
+con username = function () {
+    con cuser = 'whoami'
+    var user = call(cuser)
+    user = user.cut(0, user.length() - 1)
+    return user
+}
+con wirteLogFile = function (message) {
+    con u = username()
+    con suffix = '/Users/{}/Library/Logs/Store/'.format(u)
+    guaFileMkdir(suffix)
+    con path = "{}/gua.log".format(suffix)
+    con t = time()
+    con s = '{} {}\n'.format(t, message)
+    s.appendToFile(path)
+}
+con loadInstalled = function() {
+    con p = importPath.pathInstalledList()
+    if (not guaFileExist(p)) {
+        '{}'.writeToFile(p)
+        return {}
+    }
+    var s = stringFromFile(p)
+    return json.loads(s)
+}
+con addInstalled = function(token) {
+    var o = loadInstalled()
+    o[token] = 1
+    con p = importPath.pathInstalledList()
+    var s = json.dumps(o)
+    s.writeToFile(p)
+}
+con removeInstalled = function(token) {
+    var o = loadInstalled()
+    o.delete(token)
+    con p = importPath.pathInstalledList()
+    var s = json.dumps(o)
+    s.writeToFile(p)
+}
+con jq = function(jsonString) {
+    os.system("echo '{}' | jq".format(jsonString))
+}
+con guaSearchFromDb = function(table, name) {
+    var pathDir = importPath.pathMetaBin()
+    var pathDb = '{}/package_source_data/{}'.format(pathDir, 'store.db')
+    var cmd = `sqlite3 {} 'select * from {} where (name LIKE "%{}%")'`.format(pathDb, table, name)
+    if (table == 'cask') {
+        cmd = `sqlite3 {} 'select * from cask where (name LIKE "%{}%" or token LIKE "%{}%")'`.format(pathDb, name, name)
+    }
+    con c = 'exec {}'.format(cmd)
+    con s = call(c)
+    if (s == null) {
+        return ''
+    }
+    return s
+}
+con guaItemFromDb = function(table, name) {
+    var pathDir = importPath.pathMetaBin()
+    var pathDb = '{}/package_source_data/{}'.format(pathDir, 'store.db')
+    var cmd = `sqlite3 {} 'select * from {} where (name = "{}")'`.format(pathDb, table, name)
+    if (table == 'cask') {
+        con token = name
+        cmd = `sqlite3 {} 'select * from {} where (token = "{}")'`.format(pathDb, table, token)
+    }
+    con c = 'exec {}'.format(cmd)
+    con s = call(c)
+    if (s == null) {
+        return ''
+    }
+    return s
 }

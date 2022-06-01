@@ -1,17 +1,13 @@
-const importAxe = import("axe")
-const importUtil = import('util')
-
-const ensure = importUtil.ensure
-
-const testInstall = function() {
+con importAxe = import("axe")
+con importUtil = import('util')
+con ensure = importUtil.ensure
+con testInstall = function() {
     var c = 'sh -c "$(curl -fsSL \'https://gitee.com/accelad/keymap/raw/master/install.sh\')"'
     var e = true
     var a = importAxe.install(c)
     ensure(a == e, a)
 }
-
-const __tests = function() {
+con __tests = function() {
     testInstall()
 }
-
 __tests()

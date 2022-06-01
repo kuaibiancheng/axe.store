@@ -1,72 +1,91 @@
 #!/usr/local/axe/meta/gualang
-
-const importAxe = import("axe")
-const importCask = import("cask")
-const importBottle = import("bottle")
-const importUtil = import("util")
-const importPath = import("path")
-const importUpdate = import("update")
-
-// 先默认 axe 为 cask
-// const emojiAxe = '🍓'
-const emojiAxe = '🍏'
-const emojiBottle = '🍉'
-const emojiCask = '🍏'
-
-const emojiMelon = '🍉'
-
-const colorfulOk = function(word) {
-    const okGreen = '\033[92m'
-    const endc = '\033[0m'
-    const f = '{}{}{}'.format(okGreen, word, endc)
+con importAxe = import("axe")
+con importCask = import("cask")
+con importBottle = import("bottle")
+con importUtil = import("util")
+con importPath = import("path")
+con importUpdate = import("update")
+con importSetup = import("_setup")
+con importConfig = import('config')
+con emojiAxe = '🍏'
+con emojiBottle = '🍉'
+con emojiCask = '🍏'
+con emojiMelon = '🍉'
+var isJson = importConfig.config.isJson
+var wirteLogFile = importUtil.wirteLogFile
+con colorfulOk = function(word) {
+    con okGreen = '\033[92m'
+    con endc = '\033[0m'
+    con f = '{}{}{}'.format(okGreen, word, endc)
     return f
 }
-
-const colorfulError = function(word) {
-    const errorRed = '\033[91m'
-    const endc = '\033[0m'
-    const f = '{}{}{}'.format(errorRed, word, endc)
+con colorfulError = function(word) {
+    con errorRed = '\033[91m'
+    con endc = '\033[0m'
+    con f = '{}{}{}'.format(errorRed, word, endc)
     return f
 }
-
-const beautifierBottleGet = function(token) {
-    const r = importBottle.get(token)
+con beautifierBottleGet = function(token) {
+    con r = importBottle.getApp(token)
     if (not r) {
         log(colorfulError('install aborted'))
     } else {
-        importUtil.callWithoutOutput("exec $SHELL")
-        const num = 3
-        const emoji = importUtil.guaStringMultiply(emojiBottle, num)
+        con num = 3
+        con emoji = importUtil.guaStringMultiply(emojiBottle, num)
         log('{} [cli] {} install successfully'.format(emoji, colorfulOk(token)))
         log('{} store.axe bin path: {} '.format(emoji, colorfulOk(importPath.pathBottleBin())))
         log('{} store.axe lib path: {} '.format(emoji, colorfulOk(importPath.pathLib())))
     }
 }
-
-const beautifierCaskGet = function(token) {
-    const r = importCask.get(token)
+con jsonBottleGet = function(token) {
+    con action = 'get'
+    con r = importBottle.getApp(token)
+    if (not r) {
+        var o = importUtil.outputForJson(action, 'error', [], 'can not install {}'.format(token))
+        log(o)
+        os.exit()
+    }
+    con data = [{
+        type: 'bottle',
+        token: token,
+    }]
+    var o = importUtil.outputForJson(action, 'ok', data)
+    log(o)
+}
+con beautifierCaskGet = function(token) {
+    con r = importCask.getApp(token)
     if (not r) {
         beautifierCaskGetFailed(token)
     } else {
-        const num = 3
-        const emoji = importUtil.guaStringMultiply(emojiCask, num)
+        con num = 3
+        con emoji = importUtil.guaStringMultiply(emojiCask, num)
         log('{} [app] {} install successfully'.format(emoji, colorfulOk(token)))
     }
 }
-
-const beautifierCaskGetFailed = function(token) {
-    const num = 3
-    const emoji = importUtil.guaStringMultiply("!", num)
+con jsonCaskGet = function(token) {
+    con action = 'get'
+    con r = importCask.getApp(token)
+    if (not r) {
+        var o = importUtil.outputForJson(action, 'error', [], 'can not install {}'.format(token))
+        return
+    }
+    con data = [{
+        type: 'cask',
+        token: token,
+    }]
+    var o = importUtil.outputForJson(action, 'ok', data)
+    log(o)
+}
+con beautifierCaskGetFailed = function(token) {
+    con num = 3
+    con emoji = importUtil.guaStringMultiply("!", num)
     log('{} [app] {} install failed.check your network, or maybe this software can not download in China.'.format(emoji, colorfulError(token)))
 }
-
-const beautifierSearchOutput = function(items) {
-    const hintAxe = ' [axe] '
-    const hintBottle = ' [cli] '
-    const hintCask = ' [app] '
-    const showConfigMap = {
-        // 'axe': [emojiAxe, hintAxe],
-        // 先默认 axe 为 cask
+con beautifierSearchOutput = function(items) {
+    con hintAxe = ' [axe] '
+    con hintBottle = ' [cli] '
+    con hintCask = ' [app] '
+    con showConfigMap = {
         'axe': [emojiCask, hintCask],
         'bottle': [emojiBottle, hintBottle],
         'cask': [emojiCask, hintCask],
@@ -74,45 +93,72 @@ const beautifierSearchOutput = function(items) {
     var emoji = emojiBottle
     var outputs = []
     for (var i = 0; i < items.length(); i += 1) {
-        const item = items[i]
-        const token = item['token']
-        const num = i + 1
-        const name = item['name']
-        const version = item['version']
-
-        const type = item['type']
-        const showConfig = showConfigMap[type]
-        const emoji = showConfig[0]
-        const hint = showConfig[1]
-        const template = emoji + hint + '[{}] {}  {}@{}'
-        const s = template.format(colorfulOk(num), token, name, version)
+        con item = items[i]
+        con token = item['token']
+        con num = i + 1
+        con name = item['name']
+        con version = item['version']
+        con type = item['type']
+        con showConfig = showConfigMap[type]
+        con emoji = showConfig[0]
+        con hint = showConfig[1]
+        con template = emoji + hint + '[{}] {}  {}@{}'
+        con s = template.format(colorfulOk(num), token, name, version)
         outputs.add(s)
     }
-    const ss = outputs.join('\n')
+    con ss = outputs.join('\n')
     log(ss)
 }
-
-const newVersionHint = function() {
-    const version = async_result_check_version()
+con jsonSearchOutput = function(token, items, type) {
+    con action = 'sou'
+    var o = importUtil.outputForJson(action, 'ok', [])
+    var list = []
+    for (var i = 0; i < items.length(); i += 1) {
+        con item = items[i]
+        if (type != '') {
+            if (item.type == type) {
+                list.add({
+                    type: item.type,
+                    token: item.token,
+                    name: item.name,
+                    version: item.version,
+                    installed: item.installed,
+                    install_type: item.install_type,
+                })
+            }
+        } else {
+            list.add({
+                type: item.type,
+                token: item.token,
+                name: item.name,
+                version: item.version,
+                installed: item.installed,
+                install_type: item.install_type,
+            })
+        }
+    }
+    o.data = list
+    log(o)
+}
+con newVersionHint = function() {
+    con version = async_result_check_version()
     if (version != null) {
-        const hintVersion = 'new version of store found, please update(store.axe update)'
-        const colorfulVersion = colorfulOk(hintVersion)
+        con hintVersion = 'new version of store found, please update(store.axe update)'
+        con colorfulVersion = colorfulOk(hintVersion)
         log('')
         log(colorfulVersion)
     }
 }
-
-const selectNumFromInput = function(maxNum) {
-    const hintMsg = 'type number to install, Enter to exit:'
+con selectNumFromInput = function(maxNum) {
+    con hintMsg = 'type number to install, Enter to exit:'
     log(hintMsg)
-    var strNum = input()
+    var strNum =  importUtil.input()
     strNum = strNum.strip(' ')
     if (strNum == '') {
         return -1
     }
-
-    const num = importUtil.guaStringToInt(strNum)
-    const errMsg = colorfulError("please select correct number")
+    con num = importUtil.guaStringToInt(strNum)
+    con errMsg = colorfulError("please select correct number")
     if (num == null) {
         log(errMsg)
         return null
@@ -123,229 +169,334 @@ const selectNumFromInput = function(maxNum) {
         return null
     }
 }
-
-const promptSearch = function(funcSearch, token) {
-    const out = funcSearch(token)
-    const funcMap = {
+con promptSearch = function(funcSearch, token, type='') {
+    con out = funcSearch(token, type)
+    con funcMap = {
         'axe': beautifierAxeGet,
         'bottle': beautifierBottleGet,
         'cask': beautifierCaskGet,
     }
-
-    const maxNum = out.length()
-    if (maxNum == 0) {
-        const error = colorfulError("can not find any items.")
-        log(error)
-        return
-    }
-
-    log("find items:")
-    beautifierSearchOutput(out)
-    newVersionHint()
-    while (true) {
-        const selected = selectNumFromInput(maxNum)
-        if (selected == -1) {
-            break
-        } else if (selected == null) {
-            continue
-        } else {
-            const item = out[selected - 1]
-            const type = item['type']
-            const token = item['token']
-            const func = funcMap[type]
-            return func(token)
+    con maxNum = out.length()
+    if (isJson) {
+        jsonSearchOutput(token, out, type)
+    } else {
+        if (maxNum == 0) {
+            con error = colorfulError("can not find any items.")
+            log(error)
+            return
+        }
+        log("find items:")
+        beautifierSearchOutput(out)
+        newVersionHint()
+        while (true) {
+            con selected = selectNumFromInput(maxNum)
+            if (selected == -1) {
+                break
+            } else if (selected == null) {
+                continue
+            } else {
+                con item = out[selected - 1]
+                con type = item['install_type']
+                con token = item['token']
+                con func = funcMap[type]
+                return func(token)
+            }
         }
     }
 }
-
-const comboSearch = function(name) {
-    const a = importAxe.search(name)
-    const b = importBottle.search(name)
-    const c = importCask.search(name)
-    var l = [
-        [b, 'bottle'],
-
-        // 先默认 axe 为 cask
-        [a, 'axe'],
-        [c, 'cask'],
-    ]
+con comboSearch = function(name, type='') {
     var combo = []
-    for (var i = 0; i < l.length(); i += 1) {
-        const tuple = l[i]
-        const result = tuple[0]
-        const type = tuple[1]
-        for (var j = 0; j < result.length(); j += 1) {
-            var item = result[j]
-            item['type'] = type
+    if (type == 'axe' or type == '') {
+        con a = importAxe.search(name)
+        for (var i = 0; i < a.length(); i += 1) {
+            var item = a[i]
+            if (item['type'] == 'bottle') {
+                item['install_type'] = 'axe'
+                combo.add(item)
+            }
+        }
+        for (var i = 0; i < a.length(); i += 1) {
+            var item = a[i]
+            if (item['type'] == 'cask') {
+                item['install_type'] = 'axe'
+                combo.add(item)
+            }
+        }
+    }
+    if (type == 'bottle' or type == '') {
+        con b = importBottle.search(name)
+        for (var i = 0; i < b.length(); i += 1) {
+            var item = b[i]
+            item['install_type'] = 'bottle'
+            item['type'] = 'bottle'
+            combo.add(item)
+        }
+    }
+    if (type == 'cask' or type == '') {
+        con c = importCask.search(name)
+        for (var i = 0; i < c.length(); i += 1) {
+            var item = c[i]
+            item['install_type'] = 'cask'
+            item['type'] = 'cask'
             combo.add(item)
         }
     }
     return combo
 }
-
-const beautifierAxeGet = function(token) {
-    const r = importAxe.get(token)
+con beautifierAxeGet = function(token) {
+    con r = importAxe.getApp(token)
     if (not r) {
         log(colorfulError('install failed'))
     } else {
-        const num = 3
-        const emoji = importUtil.guaStringMultiply(emojiAxe, num)
+        con num = 3
+        var software = importAxe.axeSoftFromName(token)
+        var emoji = null
+        if (software['type'] == 'bottle') {
+            emoji = importUtil.guaStringMultiply(emojiBottle, num)
+        } else {
+            emoji = importUtil.guaStringMultiply(emojiCask, num)
+        }
         log('{} [axe] {} install successfully'.format(emoji, colorfulOk(token)))
     }
 }
-
-const promptGet = function(token) {
-    const ae = importAxe.tokenExist(token)
-    const be = importBottle.tokenExist(token)
-    const ce = importCask.tokenExist(token)
-
-    const result = {
-        'axe': [ae, beautifierAxeGet],
-        'bottle': [be, beautifierBottleGet],
-        'cask': [ce, beautifierCaskGet],
+con jsonAxeGet = function(token) {
+    con action = 'get'
+    con r = importAxe.getApp(token)
+    if (not r) {
+        var o = importUtil.outputForJson(action, 'error', [], 'can not install {}'.format(token))
+        return
     }
-
-    var foundNum = 0
-    var foundType = null
-    const keys = result.keys()
-    for (var i = 0; i < keys.length(); i += 1) {
-        const key = keys[i]
-        const v = result[key]
-        const found = v[0]
+    con data = [{
+        type: 'axe',
+        token: token,
+    }]
+    var o = importUtil.outputForJson(action, 'ok', data)
+    log(o)
+}
+con promptGet = function(token, type) {
+    con ae = importAxe.tokenExist(token)
+    con be = importBottle.tokenExist(token)
+    con ce = importCask.tokenExist(token)
+    if (isJson) {
+        con result = {
+            'axe': [ae, jsonAxeGet],
+            'bottle': [be, jsonBottleGet],
+            'cask': [ce, jsonCaskGet],
+        }
+        con v = result[type]
+        con found = v[0]
+        con func = v[1]
         if (found) {
-            foundNum += 1
-            foundType = key
+            func(token)
+        } else {
+            con o = importUtil.outputForJson('get', 'error', [], '{} not found'.format(token))
+            log(o)
+        }
+    } else {
+        con result = {
+            'axe': [ae, beautifierAxeGet],
+            'bottle': [be, beautifierBottleGet],
+            'cask': [ce, beautifierCaskGet],
+        }
+        var foundNum = 0
+        var foundType = null
+        con keys = result.keys()
+        for (var i = 0; i < keys.length(); i += 1) {
+            con key = keys[i]
+            con v = result[key]
+            con found = v[0]
+            if (found) {
+                foundNum += 1
+                foundType = key
+            }
+        }
+        if (foundNum == 0) {
+            log(colorfulError('token not exist'))
+        } else if (foundNum == 1) {
+            con software = result[foundType]
+            con func = software[1]
+            func(token)
+        } else {
+            promptSearch(comboSearch, token)
         }
     }
-    if (foundNum == 0) {
-        log(colorfulError('token not exist'))
-    } else if (foundNum == 1) {
-        const software = result[foundType]
-        const func = software[1]
-        func(token)
-    } else {
-        promptSearch(comboSearch, token)
-    }
 }
-
-// todo axelib
-
-const promptHelp = function() {
+con promptHelp = function() {
     log('{} usage: {}'.format(emojiMelon, colorfulOk('store.axe get/sou qq')))
     log('{} update store: {}'.format(emojiMelon, colorfulOk('store.axe update')))
     log('{} remove app: {}'.format(emojiMelon, colorfulOk('store.axe rm qqmusic')))
-    // log('{} create axelib: {}'.format(emojiMelon, colorfulOk("store axe sdl2")))
     log('{} store.axe bin path: {}'.format(emojiMelon, colorfulOk(importPath.pathBottleBin())))
     log('{} store.axe lib path: {}'.format(emojiMelon, colorfulOk(importPath.pathLib())))
     log('{} store.axe opt path: {}'.format(emojiMelon, colorfulOk(importPath.pathOpt())))
-    // log('{} store.axe axelib path: {}'.format(emojiMelon, colorfulOk(importPath.pathAxelib())))
     log('{} store.axe config path: {}'.format(emojiMelon, colorfulOk(importPath.pathConfigFile())))
 }
-
-const promptUpdate = function(result) {
-    const num = 3
-    const emoji = importUtil.guaStringMultiply(emojiMelon, num)
-    log('{} your store is up-to-date'.format(emoji))
+con promptUpdate = function(result) {
+    if (isJson) {
+        con o = importUtil.outputForJson('update', 'ok', [], 'latest version')
+        log(o)
+    } else {
+        con num = 3
+        con emoji = importUtil.guaStringMultiply(emojiMelon, num)
+        log('{} your store is up-to-date'.format(emoji))
+    }
 }
-
-const promptRm = function(token) {
-    const e = importCask.tokenExist(token)
-    if (e) {
-        const r = importCask.remove(token)
+con promptRm = function(token) {
+    con action = 'rm'
+    if (isJson) {
+        con r = importCask.remove(token, false)
+        var status = 'ok'
+        if (not r) {
+            status = 'error'
+        }
+        con o = importUtil.outputForJson(action, status, [{
+            type: 'cask',
+            token: token,
+        }])
+        log(o)
+    } else {
+        con e = importCask.tokenExist(token)
+        if (not e) {
+            log(colorfulError('token not exist'))
+            return
+        }
+        con r = importCask.remove(token)
         if (r) {
-            const hint = 'rm {} successfully'.format(colorfulOk(token))
+            con hint = 'rm {} successfully'.format(colorfulOk(token))
             log(hint)
         } else {
             log(colorfulError('rm failed')) 
         }
-    } else {
-        log(colorfulError('token not exist'))
     }
 }
-
-const macValid = function() {
-    const name = importBottle.macosName()
+con promptList = function() {
+    con action = 'list'
+    var list = importUtil.loadInstalled()
+    if (isJson) {
+        var o = importUtil.outputForJson(action, 'ok', list)
+        log(o)
+    } else {
+        var tokens = list.keys()
+        var s = tokens.join('\n')
+        log(s)
+    }
+}
+con macValid = function() {
+    con name = importBottle.macosName()
     return name != null
 }
-
-const prepare = function() {
+con prepare = function() {
     importBottle.prepare()
     importCask.prepare()
-    // axelib.prepare()
 }
-
-const async_call_check_version = function() {
-    const pathMetaBin = importPath.pathMetaBin()
-    const gua = '{}/async_check.gua'.format(pathMetaBin)
-    const c = '(/usr/local/axe/meta/gualang {} > /dev/null 2>&1 &)'.format(gua)
+con async_call_check_version = function() {
+    con pathMetaBin = importPath.pathMetaBin()
+    con gua = '{}/async_check.gua'.format(pathMetaBin)
+    con c = '(/usr/local/axe/meta/gualang {} > /dev/null 2>&1 &)'.format(gua)
     importUtil.callWithoutOutput(c)
 }
-
-const async_result_check_version = function() {
-    const pathOutput = importPath.pathAsyncOutput()
-    const e = importUtil.guaFileExist(pathOutput)
+con async_result_check_version = function() {
+    con pathOutput = importPath.pathAsyncOutput()
+    con e = importUtil.guaFileExist(pathOutput)
     if (not e) {
         return null
     }
-
-    const s = stringFromFile(pathOutput)
+    con s = stringFromFile(pathOutput)
     if (s == '') {
         return null
     } else {
         return s
     }
 }
-
-const showVersion = function() {
-    const p = importPath.pathMetaBin()
-    const v = '{}/{}'.format(p, 'version')
-    const s = stringFromFile(v)
-    const list = []
+con promptVersion = function() {
+    con p = importPath.pathMetaBin()
+    con v = '{}/{}'.format(p, 'version')
+    con s = stringFromFile(v)
+    con list = []
     for (var i = 0; i < s.length(); i += 1) {
-        const c = s[i]
+        con c = s[i]
         list.add(c)
     }
-    const version = list.join('.')
-    log('axe.store version: {}'.format(version))
+    con version = list.join('.')
+    if (isJson) {
+        con data = [version]
+        con o = importUtil.outputForJson('version', 'ok', data)
+        log(o)
+    } else {
+        log('axe.store version: {} by gl2.0+'.format(version))
+    }
 }
-
-const __main = function() {
+con showVersion = function() {
+    con p = importPath.pathMetaBin()
+    con v = '{}/{}'.format(p, 'version')
+    con s = stringFromFile(v)
+    con list = []
+    for (var i = 0; i < s.length(); i += 1) {
+        con c = s[i]
+        list.add(c)
+    }
+    con version = list.join('.')
+    if (not isJson) {
+        log('axe.store version: {} by gl2.0+'.format(version))
+    }
+}
+con patchExec = function() {
+    con cuser = 'whoami'
+    var user = importUtil.call(cuser)
+    user = user.cut(0, user.length() - 1)
+    con r = importSetup.addToShells(user)
+    return r
+}
+con __main = function() {
+    con args = os.args.cut(1)
+    if (args[-1] == '--json') {
+        args.pop()
+    }
+    con types = ['--axe', '--cask', '--bottle']
+    var type = ''
+    if (importUtil.guaArrayHas(types, args[-1])) {
+        type = args[-1].cut(2)
+        args.pop()
+    }
     showVersion()
+    con pathResult = patchExec()
     importUtil.cleanTmpFiles()
     if (not macValid()) {
         log(colorfulError("store.axe do not provide support for your MacOS version. We provice support for MacOS 10.14 and 10.15."))
         return
     }
-    const args = os.args
     prepare()
-
-    const l = args.length()
+    con l = args.length()
     if (l < 2) {
         return promptHelp()
     }
-    const inst = args[1]
+    con inst = args[1]
     if (inst == 'sou') {
         async_call_check_version()
         if (l < 3) {
             return promptHelp()
         }
-        const token = args[2]
-        promptSearch(comboSearch, token)
+        con token = args[2]
+        promptSearch(comboSearch, token, type)
     } else if (inst == 'get') {
         if (l < 3) {
             return promptHelp()
         }
-        const token = args[2]
-        promptGet(token)
+        con token = args[2]
+        promptGet(token, type)
     } else if (inst == 'update') {
-        const r = importUpdate.updateStore()
+        con r = importUpdate.updateStore()
         promptUpdate(r)
     } else if (inst == 'rm') {
-        const token = args[2]
+        con token = args[2]
         promptRm(token)
-    } else {
+    } else if (inst == 'version') {
+        promptVersion()
+    }
+     else {
         promptHelp()
     }
+    if (pathResult) {
+        con c = 'exec $SHELL'
+        importUtil.callWithoutOutput(c)
+    }
 }
-
-__main()

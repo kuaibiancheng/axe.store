@@ -1,133 +1,108 @@
-const pathHome = function() {
+con pathHome = function() {
     var t = '/usr/local/axe'
     return t
 }
-
-const pathConfigFile = function() {
+con pathConfigFile = function() {
     var h = pathHome()
     var f = 'axe_store_config.gua'
     var t = '{}/{}'.format(h, f)
     return t
 }
-
-const pathCaskFileDownload = function(name) {
+con pathCaskFileDownload = function(name) {
     var h = pathHome()
     var t = '{}/cask/download/{}.axestore'.format(h, name)
     return t
 }
-
-
-const pathBottleFileDownload = function(name) {
+con pathBottleFileDownload = function(name) {
     var h = pathHome()
     var t = '{}/bottle/download/{}.axestore'.format(h, name)
     return t
 }
-
-
-const pathCaskMount = function() {
+con pathCaskMount = function() {
     var h = pathHome()
     var t = '{}'.format(h)
     return t
 }
-
-
-const pathCaskDecompressed = function() {
+con pathCaskDecompressed = function() {
     var h = pathHome()
     var path = '{}/cask/decompressed'.format(h)
     return path
 }
-
-
-const pathBottleDecompressed = function() {
+con pathBottleDecompressed = function() {
     var h = pathHome()
     var path = '{}/bottle/decompressed'.format(h)
     return path
 }
-
-
-const pathCaskDownload = function() {
+con pathCaskDownload = function() {
     var h = pathHome()
     var path = '{}/cask/download'.format(h)
     return path
 }
-
-
-const pathBottleDownload = function() {
+con pathBottleDownload = function() {
     var h = pathHome()
     var path = '{}/bottle/download'.format(h)
     return path
 }
-
-
-const pathBottleLib = function() {
+con pathBottleLib = function() {
     var h = pathHome()
     var path = '{}/bottle/lib'.format(h)
     return path
 }
-
-
-const pathBottlePackage = function(name) {
+con pathBottlePackage = function(name) {
     var l = pathBottleLib()
     var p = '{}/{}'.format(l, name)
     return p
 }
-
-
-const pathBottleBin = function() {
+con pathBottleBin = function() {
     var h = pathHome()
     var path = '{}/bin'.format(h)
     return path
 }
-
-
-const pathLib = function() {
+con pathLib = function() {
     var h = pathHome()
     var path = '{}/lib'.format(h)
     return path
 }
-
-const pathOpt = function() {
+con pathOpt = function() {
     var h = pathHome()
     var path = '{}/opt'.format(h)
     return path
 }
-
-const pathOptPackage = function(name) {
-    const h = pathOpt()
-    const path = '{}/{}'.format(h, name)
+con pathOptPackage = function(name) {
+    con h = pathOpt()
+    con path = '{}/{}'.format(h, name)
     return path
 }
-
-
-const pathAxelib = function() {
+con pathAxelib = function() {
     var h = pathHome()
     var path = '{}/axelib'.format(h)
     return path
 }
-
-
-const pathAxelibPackage = function(name) {
+con pathAxelibPackage = function(name) {
     var a = pathAxelib()
     var p = '{}/{}.axelib'.format(a, name)
     return p
 }
-
-
-const pathMeta = function() {
+con pathMeta = function() {
     var h = pathHome()
     var path = '{}/meta'.format(h)
     return path
 }
-
-
-const pathMetaBin = function() {
+con pathMetaBin = function() {
     var p = pathMeta()
     var path = '{}/bin'.format(p)
     return path
 }
-
-const pathAsyncOutput = function() {
+con pathAsyncOutput = function() {
     var p = pathMeta()
     var path = '{}/.async.out'.format(p)
+    return path
+}
+con pathApplications = function() {
+    return '/Applications'
+}
+con pathInstalledList = function() {
+    var p = pathHome()
+    var path = '{}/.installed'.format(p)
     return path
 }
