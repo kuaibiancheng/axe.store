@@ -31,7 +31,8 @@ PS: 图形界面软件由软件提供商提供下载服务，部分软件可能�
 
 # 安装
 
-本软件支持 `10.14` 和 `10.15` 系统
+- 支持 `10.14` 及以上系统
+- 支持 `Intel` 和 `Apple Silicon`
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://github.com/kuaibiancheng/axe.store/raw/master/install.sh)"
