@@ -259,32 +259,15 @@ con pathExeOfPackage = function(packageName) {
 con fix7z = function(filePath) {
     con isShell = importUtil.guaFileIsScript(filePath)
     if (isShell) {
-        con content = stringFromFile(filePath)
-        con lines = content.split('\n')
         con brewCellar = '@@HOMEBREW_CELLAR@@'
         con brewPrefixOpt = '@@HOMEBREW_PREFIX@@/opt'
         con brewPrefix = '@@HOMEBREW_PREFIX@@'
-        var i = 0
-        con l = lines.length()
-        var newLines = []
-        while (i < l) {
-            con line = lines[i]
-            if (line.has(brewCellar)) {
-                con newLine = line.replace(brewCellar, importPath.pathBottleLib())
-                newLines.add(newLine)
-            } else if (line.has(brewPrefixOpt)) {
-                con newLine = line.replace(brewPrefixOpt, importPath.pathOpt())
-                newLines.add(newLine)
-            } else if (line.has(brewPrefix)) {
-                con newLine = line.replace(brewPrefix, importPath.pathBottleLib())
-                newLines.add(newLine)
-            } else {
-                newLines.add(line)
-            }
-            i += 1
-        }
-        con newContent = newLines.join('\n')
-        newContent.writeToFile(filePath)
+        con c1 = `sed -i -e 's?{}?{}?' {}`.format(brewCellar, importPath.pathBottleLib(), filePath)
+        con c2 = `sed -i -e 's?{}?{}?' {}`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
+        con c3 = `sed -i -e 's?{}?{}?' {}`.format(brewPrefix, importPath.pathBottleLib(), filePath)
+        importUtil.call(c1)
+        importUtil.call(c2)
+        importUtil.call(c3) 
     }
 }
 con allExeFilesOfPackage = function(packageName) {
