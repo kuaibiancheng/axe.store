@@ -262,12 +262,12 @@ con fix7z = function(filePath) {
         con brewCellar = '@@HOMEBREW_CELLAR@@'
         con brewPrefixOpt = '@@HOMEBREW_PREFIX@@/opt'
         con brewPrefix = '@@HOMEBREW_PREFIX@@'
-        con c1 = `sed -i -e 's?{}?{}?' {}`.format(brewCellar, importPath.pathBottleLib(), filePath)
-        con c2 = `sed -i -e 's?{}?{}?' {}`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
-        con c3 = `sed -i -e 's?{}?{}?' {}`.format(brewPrefix, importPath.pathBottleLib(), filePath)
-        importUtil.call(c1)
-        importUtil.call(c2)
-        importUtil.call(c3) 
+        con c1 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewCellar, importPath.pathBottleLib(), filePath)
+        con c2 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
+        con c3 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewPrefix, importPath.pathBottleLib(), filePath)
+        importUtil.callWithoutOutput(c1)
+        importUtil.callWithoutOutput(c2)
+        importUtil.callWithoutOutput(c3) 
     }
 }
 con allExeFilesOfPackage = function(packageName) {

@@ -395,29 +395,17 @@ con call = function(c) {
         var r = stringFromFile(outputTmpFile)
         return r
     } else {
-        con isJson = importConfig.config.isJson
-        if (isJson) {
-            con s = 'call failed <{}>'.format(newCommand)
-            wirteLogFile(s)            
-        } else {
-            log('call failed <{}>'.format(newCommand))
-            return null
-        }
+        con s = 'call failed <{}>'.format(c)
+        wirteLogFile(s)
     }
 }
 con callWithoutOutput = function(c) {
     var result = os.system(c)
     if (result == 0) {
         return true
-    } else {
-        con isJson = importConfig.config.isJson
-        if (isJson) {
-            con s = 'call failed <{}>'.format(c)
-            wirteLogFile(s)  
-        } else {
-            log('call failed <{}>'.format(c))
-            return false
-        }
+    } else {        
+        con s = 'call failed <{}>'.format(c)
+        wirteLogFile(s)  
     }
 }
 con cleanTmpFiles = function() {
