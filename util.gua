@@ -252,6 +252,12 @@ con guaFileIsScript = function(path) {
     con i = r.has(scriptStr)
     return i
 }
+con guaFileIsText = function(path) {
+    con r = guaFileType(path)
+    con textStr = 'UTF-8'
+    con i = r.has(textStr) 
+    return i
+}
 con guaFileIsExecutable = function(path) {
     if (guaFileIsDirectory(path)) {
         return false

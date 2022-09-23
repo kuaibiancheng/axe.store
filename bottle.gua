@@ -258,16 +258,20 @@ con pathExeOfPackage = function(packageName) {
 }
 con fix7z = function(filePath) {
     con isShell = importUtil.guaFileIsScript(filePath)
-    if (isShell) {
+    con isText = importUtil.guaFileIsText(filePath)
+    if (isShell or isText) {
         con brewCellar = '@@HOMEBREW_CELLAR@@'
         con brewPrefixOpt = '@@HOMEBREW_PREFIX@@/opt'
         con brewPrefix = '@@HOMEBREW_PREFIX@@'
-        con c1 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewCellar, importPath.pathBottleLib(), filePath)
-        con c2 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
-        con c3 = `sed -i -e 's?{}?{}?' {} > /dev/null 2>&1`.format(brewPrefix, importPath.pathBottleLib(), filePath)
+        con brewPerl =  '@@HOMEBREW_PERL@@'
+        con c1 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewCellar, importPath.pathBottleLib(), filePath)
+        con c2 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
+        con c3 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPrefix, importPath.pathBottleLib(), filePath)
+        con c4 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPerl, '/usr/bin/perl', filePath)
         importUtil.callWithoutOutput(c1)
         importUtil.callWithoutOutput(c2)
         importUtil.callWithoutOutput(c3) 
+        importUtil.callWithoutOutput(c4) 
     }
 }
 con allExeFilesOfPackage = function(packageName) {
