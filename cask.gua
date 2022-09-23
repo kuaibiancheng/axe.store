@@ -267,7 +267,7 @@ con search = function(name) {
         var itemName = line[0]
         var token = line[1]
         var artifacts = line[2]
-        var item = json.loads(line[3])
+        var item = json.loads(line.cut(3).join('|'))
         con version = versionFromCask(item['version'])
         con _item = {
             'name': itemName,
