@@ -267,7 +267,7 @@ con fix7z = function(filePath) {
         con c1 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewCellar, importPath.pathBottleLib(), filePath)
         con c2 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPrefixOpt, importPath.pathOpt(), filePath)
         con c3 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPrefix, importPath.pathBottleLib(), filePath)
-        con c4 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPerl, '/usr/bin/perl', filePath)
+        con c4 = `sed -i -e 's?{}?{}?g' {} > /dev/null 2>&1`.format(brewPerl, '/usr/bin/env perl', filePath)
         importUtil.callWithoutOutput(c1)
         importUtil.callWithoutOutput(c2)
         importUtil.callWithoutOutput(c3) 
