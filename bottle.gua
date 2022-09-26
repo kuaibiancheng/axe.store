@@ -469,7 +469,7 @@ con handleLibexec = function(packageName) {
                 var i = 0
                 while (i < l) {
                     con dir = dirs[i]
-                    var c = 'cp -a -r "{}" "{}"'.format(dir, importPath.pathLib())
+                    var c = 'cp -a "{}" "{}" 2>/dev/null'.format(dir, importPath.pathLib())
                     var r = importUtil.callWithoutOutput(c)
                     i += 1
                 }
